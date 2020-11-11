@@ -117,7 +117,7 @@ namespace usb_pad
 		uint8_t port;
 		struct freeze
 		{
-			int wheel_type;
+			int dev_subtype;
 		} f;
 	} PADState;
 
@@ -232,7 +232,7 @@ namespace usb_pad
 		PADState* s = (PADState*)dev;
 		int ret = 0;
 
-		int t = conf.WheelType[s->port];
+		int t = s->pad->Type();
 
 		switch (request)
 		{
@@ -551,7 +551,7 @@ namespace usb_pad
 		if (!pad)
 			return NULL;
 
-		pad->Type((PS2WheelTypes)conf.WheelType[port]);
+		pad->Type((PS2WheelTypes)GetSelectedSubtype(std::make_pair(port, TypeName())));
 		PADState* s = new PADState();
 
 		s->desc.full = &s->desc_dev;
@@ -599,7 +599,7 @@ namespace usb_pad
 		if (usb_desc_parse_config(config_desc, config_desc_len, s->desc_dev) < 0)
 			goto fail;
 
-		s->f.wheel_type = conf.WheelType[port];
+		s->f.dev_subtype = pad->Type();
 		s->pad = pad;
 		s->dev.speed = USB_SPEED_FULL;
 		s->dev.klass.handle_attach = usb_desc_attach;
@@ -642,7 +642,7 @@ namespace usb_pad
 		{
 			case FREEZE_LOAD:
 				s->f = *(PADState::freeze*)data;
-				s->pad->Type((PS2WheelTypes)s->f.wheel_type);
+				s->pad->Type((PS2WheelTypes)s->f.dev_subtype);
 				return sizeof(PADState::freeze);
 			case FREEZE_SAVE:
 				*(PADState::freeze*)data = s->f;
@@ -690,7 +690,7 @@ namespace usb_pad
 		if (usb_desc_parse_config(rb1_config_descriptor, sizeof(rb1_config_descriptor), s->desc_dev) < 0)
 			goto fail;
 
-		s->f.wheel_type = pad->Type();
+		s->f.dev_subtype = pad->Type();
 		s->pad = pad;
 		s->port = port;
 		s->dev.speed = USB_SPEED_FULL;
@@ -763,7 +763,7 @@ namespace usb_pad
 		if (usb_desc_parse_config(buzz_config_descriptor, sizeof(buzz_config_descriptor), s->desc_dev) < 0)
 			goto fail;
 
-		s->f.wheel_type = pad->Type();
+		s->f.dev_subtype = pad->Type();
 		s->pad = pad;
 		s->port = port;
 		s->dev.speed = USB_SPEED_FULL;
