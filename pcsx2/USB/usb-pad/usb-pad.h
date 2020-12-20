@@ -112,6 +112,35 @@ namespace usb_pad
 		static void Initialize();
 	};
 
+	class RealPlayDevice
+	{
+	public:
+		virtual ~RealPlayDevice() {}
+		static USBDevice* CreateDevice(int port);
+		static const TCHAR* Name()
+		{
+			return TEXT("RealPlay Device");
+		}
+		static const char* TypeName()
+		{
+			return "realplay_device";
+		}
+		static std::list<std::string> ListAPIs();
+		static const TCHAR* LongAPIName(const std::string& name);
+		static int Configure(int port, const std::string& api, void* data);
+		static int Freeze(int mode, USBDevice* dev, void* data);
+		static std::vector<std::string> SubTypes()
+		{
+			std::vector<std::string> ret;
+			ret.push_back("RealPlay Racing");
+			ret.push_back("RealPlay Sphere");
+			ret.push_back("RealPlay Golf");
+			ret.push_back("RealPlay Pool");
+			return ret;
+		}
+		static void Initialize();
+	};
+
 	class SeamicDevice
 	{
 	public:
@@ -183,6 +212,10 @@ namespace usb_pad
 		WT_GT_FORCE,               //formula gp
 		WT_ROCKBAND1_DRUMKIT,
 		WT_BUZZ_CONTROLLER,
+		WT_REALPLAY_RACING,
+		WT_REALPLAY_SPHERE,
+		WT_REALPLAY_GOLF,
+		WT_REALPLAY_POOL,
 		WT_SEGA_SEAMIC,
 	};
 
@@ -1292,6 +1325,196 @@ namespace usb_pad
 		0xC0,             //   End Collection
 		0xC0,             // End Collection
 						  // 78 bytes
+	};
+
+	//////////////
+	// RealPlay //
+	//////////////
+
+	// Product ID :
+	// Racing - 0x09B2
+	// Sphere - 0x09B3
+	// Golf - 0x09B5
+	// Pool - 0x09B6
+
+	// RealPlay Golf is dumped from a real controller.
+	// The others are force-brutted to be accepted by games - they may be inaccurate.
+
+	static const uint8_t realplay_racing_dev_descriptor[] = {
+		0x12,       // bLength
+		0x01,       // bDescriptorType (Device)
+		0x00, 0x02, // bcdUSB 2.00
+		0x00,       // bDeviceClass (Use class information in the Interface Descriptors)
+		0x00,       // bDeviceSubClass
+		0x00,       // bDeviceProtocol
+		0x40,       // bMaxPacketSize0 64
+		0xB7, 0x14, // idVendor 0x14B7
+		0xB2, 0x09, // idProduct 0x09B2
+		0x00, 0x01, // bcdDevice 2.00
+		0x01,       // iManufacturer (String Index)
+		0x02,       // iProduct (String Index)
+		0x00,       // iSerialNumber (String Index)
+		0x01,       // bNumConfigurations 1
+	};
+
+	static const uint8_t realplay_sphere_dev_descriptor[] = {
+		0x12,       // bLength
+		0x01,       // bDescriptorType (Device)
+		0x00, 0x02, // bcdUSB 2.00
+		0x00,       // bDeviceClass (Use class information in the Interface Descriptors)
+		0x00,       // bDeviceSubClass
+		0x00,       // bDeviceProtocol
+		0x40,       // bMaxPacketSize0 64
+		0xB7, 0x14, // idVendor 0x14B7
+		0xB3, 0x09, // idProduct 0x09B3
+		0x00, 0x01, // bcdDevice 2.00
+		0x01,       // iManufacturer (String Index)
+		0x02,       // iProduct (String Index)
+		0x00,       // iSerialNumber (String Index)
+		0x01,       // bNumConfigurations 1
+	};
+
+	static const uint8_t realplay_golf_dev_descriptor[] = {
+		0x12,       // bLength
+		0x01,       // bDescriptorType (Device)
+		0x00, 0x02, // bcdUSB 2.00
+		0x00,       // bDeviceClass (Use class information in the Interface Descriptors)
+		0x00,       // bDeviceSubClass
+		0x00,       // bDeviceProtocol
+		0x40,       // bMaxPacketSize0 64
+		0xB7, 0x14, // idVendor 0x14B7
+		0xB5, 0x09, // idProduct 0x09B5
+		0x00, 0x01, // bcdDevice 2.00
+		0x01,       // iManufacturer (String Index)
+		0x02,       // iProduct (String Index)
+		0x00,       // iSerialNumber (String Index)
+		0x01,       // bNumConfigurations 1
+	};
+
+	static const uint8_t realplay_pool_dev_descriptor[] = {
+		0x12,       // bLength
+		0x01,       // bDescriptorType (Device)
+		0x00, 0x02, // bcdUSB 2.00
+		0x00,       // bDeviceClass (Use class information in the Interface Descriptors)
+		0x00,       // bDeviceSubClass
+		0x00,       // bDeviceProtocol
+		0x40,       // bMaxPacketSize0 64
+		0xB7, 0x14, // idVendor 0x14B7
+		0xB6, 0x09, // idProduct 0x09B6
+		0x00, 0x01, // bcdDevice 2.00
+		0x01,       // iManufacturer (String Index)
+		0x02,       // iProduct (String Index)
+		0x00,       // iSerialNumber (String Index)
+		0x01,       // bNumConfigurations 1
+	};
+
+	static const uint8_t realplay_config_descriptor[] = {
+		0x09,       // bLength
+		0x02,       // bDescriptorType (Configuration)
+		0x29, 0x00, // wTotalLength 41
+		0x01,       // bNumInterfaces 1
+		0x01,       // bConfigurationValue
+		0x00,       // iConfiguration (String Index)
+		0x80,       // bmAttributes
+		0x32,       // bMaxPower 100mA
+
+		0x09, // bLength
+		0x04, // bDescriptorType (Interface)
+		0x00, // bInterfaceNumber 0
+		0x00, // bAlternateSetting
+		0x02, // bNumEndpoints 2
+		0x03, // bInterfaceClass
+		0x00, // bInterfaceSubClass
+		0x00, // bInterfaceProtocol
+		0x00, // iInterface (String Index)
+
+		0x09,       // bLength
+		0x21,       // bDescriptorType (HID)
+		0x11, 0x01, // bcdHID 1.11
+		0x00,       // bCountryCode
+		0x01,       // bNumDescriptors
+		0x22,       // bDescriptorType[0] (HID)
+		0x85, 0x00, // wDescriptorLength[0] 133
+
+		0x07,       // bLength
+		0x05,       // bDescriptorType (Endpoint)
+		0x02,       // bEndpointAddress (OUT/H2D)
+		0x03,       // bmAttributes (Interrupt)
+		0x40, 0x00, // wMaxPacketSize 64
+		0x0A,       // bInterval 10 (unit depends on device speed)
+
+		0x07,       // bLength
+		0x05,       // bDescriptorType (Endpoint)
+		0x81,       // bEndpointAddress (IN/D2H)
+		0x03,       // bmAttributes (Interrupt)
+		0x40, 0x00, // wMaxPacketSize 64
+		0x0A,       // bInterval 10 (unit depends on device speed)
+	};
+
+	static const uint8_t realplay_hid_report_descriptor[] = {
+		0x05, 0x01,       // Usage Page (Generic Desktop Ctrls)
+		0x09, 0x05,       // Usage (Game Pad)
+		0xA1, 0x01,       // Collection (Application)
+		0x15, 0x00,       //   Logical Minimum (0)
+		0x26, 0xFF, 0x0F, //   Logical Maximum (4095)
+		0x35, 0x00,       //   Physical Minimum (0)
+		0x46, 0xFF, 0x0F, //   Physical Maximum (4095)
+		0x09, 0x30,       //   Usage (X)
+		0x75, 0x0C,       //   Report Size (12)
+		0x95, 0x01,       //   Report Count (1)
+		0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x75, 0x01,       //   Report Size (1)
+		0x95, 0x04,       //   Report Count (4)
+		0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x09, 0x31,       //   Usage (Y)
+		0x75, 0x0C,       //   Report Size (12)
+		0x95, 0x01,       //   Report Count (1)
+		0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x75, 0x01,       //   Report Size (1)
+		0x95, 0x04,       //   Report Count (4)
+		0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x09, 0x32,       //   Usage (Z)
+		0x75, 0x0C,       //   Report Size (12)
+		0x95, 0x01,       //   Report Count (1)
+		0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x75, 0x01,       //   Report Size (1)
+		0x95, 0x04,       //   Report Count (4)
+		0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x06, 0x00, 0xFF, //   Usage Page (Vendor Defined 0xFF00)
+		0x09, 0x20,       //   Usage (0x20)
+		0x09, 0x21,       //   Usage (0x21)
+		0x09, 0x22,       //   Usage (0x22)
+		0x09, 0x23,       //   Usage (0x23)
+		0x09, 0x24,       //   Usage (0x24)
+		0x09, 0x25,       //   Usage (0x25)
+		0x09, 0x26,       //   Usage (0x26)
+		0x09, 0x27,       //   Usage (0x27)
+		0x26, 0xFF, 0x00, //   Logical Maximum (255)
+		0x46, 0xFF, 0x00, //   Physical Maximum (255)
+		0x75, 0x08,       //   Report Size (8)
+		0x95, 0x08,       //   Report Count (8)
+		0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x15, 0x00,       //   Logical Minimum (0)
+		0x25, 0x01,       //   Logical Maximum (1)
+		0x35, 0x00,       //   Physical Minimum (0)
+		0x45, 0x01,       //   Physical Maximum (1)
+		0x75, 0x01,       //   Report Size (1)
+		0x95, 0x08,       //   Report Count (8)
+		0x05, 0x09,       //   Usage Page (Button)
+		0x19, 0x01,       //   Usage Minimum (0x01)
+		0x29, 0x08,       //   Usage Maximum (0x08)
+		0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0x06, 0x00, 0xFF, //   Usage Page (Vendor Defined 0xFF00)
+		0x09, 0x28,       //   Usage (0x28)
+		0x09, 0x29,       //   Usage (0x29)
+		0x09, 0x2A,       //   Usage (0x2A)
+		0x09, 0x2B,       //   Usage (0x2B)
+		0x26, 0xFF, 0x00, //   Logical Maximum (255)
+		0x46, 0xFF, 0x00, //   Physical Maximum (255)
+		0x75, 0x08,       //   Report Size (8)
+		0x95, 0x04,       //   Report Count (4)
+		0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+		0xC0,             // End Collection
 	};
 
 	struct dfp_buttons_t

@@ -34,6 +34,7 @@ namespace usb_pad
 		int DInputPad::TokenIn(uint8_t* buf, int len)
 		{
 			int range = range_max(mType);
+			static int delete_this;
 
 			// Setting to unpressed
 			ZeroMemory(&mWheelData, sizeof(wheel_data_t));
@@ -56,6 +57,19 @@ namespace usb_pad
 				}
 				pad_copy_data(mType, buf, mWheelData);
 				return 5;
+			} else if (mType >= WT_REALPLAY_RACING && mType <= WT_REALPLAY_POOL) {
+				for (int i = 0; i < 8; i++) {
+					if (GetControl(mPort, i)) {
+						mWheelData.buttons |= 1 << i;
+					}
+				}
+				mWheelData.clutch = GetAxisControlUnfiltered(mPort, CID_SQUARE) >> 4;
+				mWheelData.throttle = GetAxisControlUnfiltered(mPort, CID_TRIANGLE) >> 4;
+				mWheelData.brake = GetAxisControlUnfiltered(mPort, CID_CROSS) >> 4;
+				delete_this = !delete_this; // simulate a slight move to avoid a game "protection" : controller disconnected
+				mWheelData.clutch = mWheelData.clutch & 0xfffe | delete_this;
+				pad_copy_data(mType, buf, mWheelData);
+				return 19;
 			}
 
 			//Allow in both ports but warn in configure dialog that only one DX wheel is supported for now
