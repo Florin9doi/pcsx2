@@ -5,6 +5,7 @@
 #define IDC_STATIC -1
 #define IDOK2 2
 #define IDD_DLG_BUZZ 114
+#define IDD_DLG_REALPLAY 116
 #define IDD_DIALOG1 202
 #define IDC_DEL0 1001
 #define IDC_ASS0 1002
