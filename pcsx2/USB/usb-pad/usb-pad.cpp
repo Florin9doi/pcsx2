@@ -53,6 +53,11 @@ namespace usb_pad
 		"",
 		"Logitech"};
 
+	static const USBDescStrings realplay_desc_strings = {
+		"",
+		"In2Games",
+		"Real Play"};
+
 	std::list<std::string> PadDevice::ListAPIs()
 	{
 		return RegisterPad::instance().Names();
@@ -82,6 +87,16 @@ namespace usb_pad
 	}
 
 	const TCHAR* BuzzDevice::LongAPIName(const std::string& name)
+	{
+		return PadDevice::LongAPIName(name);
+	}
+
+	std::list<std::string> RealPlayDevice::ListAPIs()
+	{
+		return PadDevice::ListAPIs();
+	}
+
+	const TCHAR* RealPlayDevice::LongAPIName(const std::string& name)
 	{
 		return PadDevice::LongAPIName(name);
 	}
@@ -256,10 +271,20 @@ namespace usb_pad
 							ret = sizeof(pad_gtforce_hid_report_descriptor);
 							memcpy(data, pad_gtforce_hid_report_descriptor, ret);
 						}
-						else
+						else if (t == WT_GENERIC)
 						{
 							ret = sizeof(pad_driving_force_hid_separate_report_descriptor);
 							memcpy(data, pad_driving_force_hid_separate_report_descriptor, ret);
+						}
+						else if (t == WT_BUZZ_CONTROLLER)
+						{
+							ret = sizeof(buzz_hid_report_descriptor);
+							memcpy(data, buzz_hid_report_descriptor, ret);
+						}
+						else if (t >= WT_REALPLAY_RACING && t <= WT_REALPLAY_POOL)
+						{
+							ret = sizeof(realplay_hid_report_descriptor);
+							memcpy(data, realplay_hid_report_descriptor, ret);
 						}
 						p->actual_length = ret;
 						break;
@@ -416,6 +441,21 @@ namespace usb_pad
 				buf[3] = (data.buttons >> 8) & 0xff;
 				buf[4] = 0xf0 | ((data.buttons >> 16) & 0xf);
 				break;
+
+			case WT_REALPLAY_RACING:
+			case WT_REALPLAY_SPHERE:
+			case WT_REALPLAY_GOLF:
+			case WT_REALPLAY_POOL:
+				memset(buf, 0, 19);
+				buf[0] = data.clutch & 0xff;
+				buf[1] = data.clutch >> 8;
+				buf[2] = data.throttle & 0xff;
+				buf[3] = data.throttle >> 8;
+				buf[4] = data.brake & 0xff;
+				buf[5] = data.brake >> 8;
+				buf[14] = data.buttons;
+				break;
+
 			case WT_SEGA_SEAMIC:
 				buf[0] = data.steering & 0xFF;
 				buf[1] = data.throttle & 0xFF;
@@ -797,6 +837,85 @@ namespace usb_pad
 	}
 
 	int BuzzDevice::Freeze(int mode, USBDevice* dev, void* data)
+	{
+		return PadDevice::Freeze(mode, dev, data);
+	}
+
+	// ---- RealPlay ----
+
+	USBDevice* RealPlayDevice::CreateDevice(int port)
+	{
+		std::string varApi;
+#ifdef _WIN32
+		std::wstring tmp;
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, tmp);
+		varApi = wstr_to_str(tmp);
+#else
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, varApi);
+#endif
+		PadProxyBase* proxy = RegisterPad::instance().Proxy(varApi);
+		if (!proxy)
+		{
+			Console.WriteLn("RealPlay: Invalid input API");
+			return NULL;
+		}
+
+		Pad* pad = proxy->CreateObject(port, TypeName());
+
+		if (!pad)
+			return NULL;
+
+		pad->Type((PS2WheelTypes)(WT_REALPLAY_RACING + GetSelectedSubtype(std::make_pair(port, TypeName()))));
+		PADState* s = new PADState();
+
+		s->desc.full = &s->desc_dev;
+		s->desc.str = realplay_desc_strings;
+
+		if (pad->Type() == WT_REALPLAY_RACING && usb_desc_parse_dev(realplay_racing_dev_descriptor, sizeof(realplay_racing_dev_descriptor), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (pad->Type() == WT_REALPLAY_SPHERE && usb_desc_parse_dev(realplay_sphere_dev_descriptor, sizeof(realplay_sphere_dev_descriptor), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (pad->Type() == WT_REALPLAY_GOLF && usb_desc_parse_dev(realplay_golf_dev_descriptor, sizeof(realplay_golf_dev_descriptor), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (pad->Type() == WT_REALPLAY_POOL && usb_desc_parse_dev(realplay_pool_dev_descriptor, sizeof(realplay_pool_dev_descriptor), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (usb_desc_parse_config(realplay_config_descriptor, sizeof(realplay_config_descriptor), s->desc_dev) < 0)
+			goto fail;
+
+		s->f.dev_subtype = pad->Type();
+		s->pad = pad;
+		s->port = port;
+		s->dev.speed = USB_SPEED_FULL;
+		s->dev.klass.handle_attach = usb_desc_attach;
+		s->dev.klass.handle_reset = pad_handle_reset;
+		s->dev.klass.handle_control = pad_handle_control;
+		s->dev.klass.handle_data = pad_handle_data;
+		s->dev.klass.unrealize = pad_handle_destroy;
+		s->dev.klass.open = pad_open;
+		s->dev.klass.close = pad_close;
+		s->dev.klass.usb_desc = &s->desc;
+		s->dev.klass.product_desc = s->desc.str[1];
+
+		usb_desc_init(&s->dev);
+		usb_ep_init(&s->dev);
+		pad_handle_reset((USBDevice*)s);
+
+		return (USBDevice*)s;
+
+	fail:
+		pad_handle_destroy((USBDevice*)s);
+		return nullptr;
+	}
+
+	int RealPlayDevice::Configure(int port, const std::string& api, void* data)
+	{
+		auto proxy = RegisterPad::instance().Proxy(api);
+		if (proxy)
+			return proxy->Configure(port, TypeName(), data);
+		return RESULT_CANCELED;
+	}
+
+	int RealPlayDevice::Freeze(int mode, USBDevice* dev, void* data)
 	{
 		return PadDevice::Freeze(mode, dev, data);
 	}
