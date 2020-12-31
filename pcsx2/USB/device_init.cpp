@@ -15,6 +15,7 @@
 
 #include "PrecompiledHeader.h"
 #include "deviceproxy.h"
+#include "usb-passthrough/usb-passthrough.h"
 #include "usb-pad/usb-pad.h"
 #include "usb-msd/usb-msd.h"
 #include "usb-mic/usb-mic-singstar.h"
@@ -39,6 +40,7 @@ void RegisterDevice::Register()
 	inst.Add(DEVTYPE_EYETOY, new DeviceProxy<usb_eyetoy::EyeToyWebCamDevice>());
 	inst.Add(DEVTYPE_BEATMANIA_DADADA, new DeviceProxy<usb_hid::BeatManiaDevice>());
 	inst.Add(DEVTYPE_SEGA_SEAMIC, new DeviceProxy<usb_pad::SeamicDevice>());
+	inst.Add(DEVTYPE_PASSTHROUGH, new DeviceProxy<usb_passthrough::PassthroughDevice>());
 
 	RegisterAPIs();
 }

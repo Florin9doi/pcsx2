@@ -217,6 +217,9 @@
     <Filter Include="System\Ps2\PAD">
       <UniqueIdentifier>{e1cbcaf6-9f65-4f14-9e89-27dd0f10e047}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Ps2\USB\usb-passthrough">
+      <UniqueIdentifier>{aebbe322-968a-4461-8001-e08e7e0708ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Utilities\folderdesc.txt">
@@ -1265,6 +1268,12 @@
     <ClCompile Include="..\..\PAD\Windows\PADRawInput.cpp">
       <Filter>System\Ps2\PAD</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\USB\usb-passthrough\usb-passthrough.cpp">
+      <Filter>System\Ps2\USB\usb-passthrough</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-passthrough\usb-passthrough-win32.cpp">
+      <Filter>System\Ps2\USB\usb-passthrough</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Patch.h">
@@ -2025,6 +2034,9 @@
     </ClInclude>
     <ClInclude Include="..\..\PAD\Windows\resource_pad.h">
       <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-passthrough\usb-passthrough.h">
+      <Filter>System\Ps2\USB\usb-passthrough</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

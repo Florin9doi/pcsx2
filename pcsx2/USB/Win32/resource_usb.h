@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// fichier Include Microsoft Visual C++.
-// Utilisé par USBDialog.rc
+// Microsoft Visual C++ generated include file.
+// Used by USBDialog.rc
 //
 #define IDC_CONFIGURE1_USB              3
 #define IDC_CONFIGURE2_USB              4
@@ -9,6 +9,7 @@
 #define IDD_DLGMSD_USB                  106
 #define IDD_DLGWASAPI_USB               107
 #define IDD_DLG_EYETOY_USB              108
+#define IDD_DLG_USB_PASSTHROUGH         110
 #define IDC_LOGGING_USB                 1007
 #define IDC_COMBO1_USB                  1008
 #define IDC_COMBO2_USB                  1009
@@ -33,7 +34,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_RESOURCE_VALUE        111
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1042
 #define _APS_NEXT_SYMED_VALUE           101
