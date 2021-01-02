@@ -140,29 +140,31 @@ namespace usb_passthrough
 				fprintf(stderr, "%02x ", data[i]);
 			}
 			fprintf(stderr, "]\n");
-			//return;
+
+			switch (request)
+			{
+				case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+				case DeviceRequest | USB_REQ_GET_DESCRIPTOR:
+					return;
+				case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+					libusb_set_configuration(usb_handle, value);
+					return;
+			}
+			return;
 		}
 
-		switch (request)
-		{	
-			case DeviceOutRequest | USB_REQ_SET_ADDRESS:
-			case DeviceRequest | USB_REQ_GET_DESCRIPTOR:
-				return;
-			case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
-				libusb_set_configuration(usb_handle, value);
-				return;
-			case VendorInterfaceOutRequest | 0x07:
-				for (int i = 0; i < length; i++)
-				{
-					fprintf(stderr, "%02x ", data[i]);
-				}
-				fprintf(stderr, "]\n");
-				return;
-				break;
-			default:
-				p->status = USB_RET_STALL;
-				break;
+		int max_len = (request & USB_DIR_IN) ? 64 : length; // maximum control trasnfer packet size = 64
+		ret = libusb_control_transfer(usb_handle, request >> 8, request & 0xff, value, index, data, max_len, 0);
+		if (ret >= 0)
+		{
+			p->actual_length = ret;
 		}
+		else
+		{
+			fprintf(stderr, "libusb_control_transfer = %d=%s\n", ret, libusb_strerror(ret));
+			p->status = USB_RET_NAK;
+		}
+
 		for (int i = 0; i < p->actual_length; i++)
 		{
 			fprintf(stderr, "%02x ", data[i]);
@@ -172,37 +174,60 @@ namespace usb_passthrough
 
 	static void usb_psp_handle_data(USBDevice* dev, USBPacket* p)
 	{
-		unsigned char data[64];
-		int len = 0;
+		unsigned char data[896] = {0};
+		int actual_length = 0;
 		int ret = 0;
-		uint8_t dev_ep = p->ep->nr;
+		const uint8_t ep_nr = p->ep->nr;
+		const uint8_t ep_type = p->ep->type;
 
-		switch (p->pid)
+		switch (ep_type)
 		{
-			case USB_TOKEN_IN:
-				//fprintf(stderr, "F: dataIn: pid=%x id=%llx ep=%x : \n", p->pid, p->id, dev_ep);
-				ret = libusb_interrupt_transfer(usb_handle, USB_DIR_IN | dev_ep, data, sizeof(data), &len, 20);
+			case USB_ENDPOINT_TYPE_ISOCHRONOUS:
+				fprintf(stderr, "USB: isoc transfer unimpl\n");
+				p->status = USB_RET_STALL;
+				break;
+			case USB_ENDPOINT_TYPE_BULK:
+				ret = libusb_bulk_transfer(usb_handle, (p->pid == USB_TOKEN_IN) ? (USB_DIR_IN | ep_nr) : ep_nr,
+						data, p->ep->max_packet_size, &actual_length, 5);
 				if (ret == LIBUSB_SUCCESS)
 				{
-					usb_packet_copy(p, data, len);
+					usb_packet_copy(p, data, actual_length);
 				}
 				else
 				{
-					fprintf(stderr, "libusb_interrupt_transfer = %d=%s\n", ret, libusb_strerror(ret));
+					fprintf(stderr, "libusb_bulk_transfer = %d=%s\n", ret, libusb_strerror(ret));
 					p->status = USB_RET_NAK;
 				}
-				//for (int i = 0; i < len; i++)
-				//{
-				//	fprintf(stderr, "%02x ", data[i]);
-				//}
 				break;
+			case USB_ENDPOINT_TYPE_INTERRUPT:
+				switch (p->pid)
+				{
+					case USB_TOKEN_IN:
+						ret = libusb_interrupt_transfer(usb_handle, USB_DIR_IN | ep_nr, data, sizeof(data), &actual_length, 5);
+						if (ret == LIBUSB_SUCCESS)
+						{
+							usb_packet_copy(p, data, actual_length);
+						}
+						else
+						{
+							fprintf(stderr, "libusb_interrupt_transfer = %d=%s\n", ret, libusb_strerror(ret));
+							p->status = USB_RET_NAK;
+						}
+						break;
 
-			case USB_TOKEN_OUT:
-				fprintf(stderr, "F: dataOut: pid=%x id=%llx ep=%x : \n", p->pid, p->id, dev_ep);
+					case USB_TOKEN_OUT:
+						fprintf(stderr, "USB: interrupt transfer OUT unimpl\n");
+						p->status = USB_RET_NAK;
+						break;
+
+					default:
+						fprintf(stderr, "USB: handle interrupt : Bad token\n");
+						p->status = USB_RET_STALL;
+						break;
+				}
 				break;
-
 			default:
-				fprintf(stderr, "Bad token\n");
+				fprintf(stderr, "USB: endpoint type : Bad token\n");
 				p->status = USB_RET_STALL;
 				break;
 		}
