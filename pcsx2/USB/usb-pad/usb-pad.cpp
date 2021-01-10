@@ -53,6 +53,11 @@ namespace usb_pad
 		"",
 		"Logitech"};
 
+	static const USBDescStrings gametrak_desc_strings = {
+		"",
+		"In2Games Ltd.",
+		"Game-Trak V1.3"};
+
 	static const USBDescStrings realplay_desc_strings = {
 		"",
 		"In2Games",
@@ -87,6 +92,16 @@ namespace usb_pad
 	}
 
 	const TCHAR* BuzzDevice::LongAPIName(const std::string& name)
+	{
+		return PadDevice::LongAPIName(name);
+	}
+
+	std::list<std::string> GametrakDevice::ListAPIs()
+	{
+		return PadDevice::ListAPIs();
+	}
+
+	const TCHAR* GametrakDevice::LongAPIName(const std::string& name)
 	{
 		return PadDevice::LongAPIName(name);
 	}
@@ -248,11 +263,24 @@ namespace usb_pad
 		int ret = 0;
 
 		int t = s->pad->Type();
+		fprintf(stderr, "Florin: usb_ctrl; req=%4x (%s), val=%4x, idx=%4x, len=%4x : [",
+				request,
+				(request ==      5) ? "setAddr" :
+				(request == 0x8006) ? "getDesc" :
+				(request ==      9) ? "setConf" :
+				(request == 0x2109) ? "setRepr" :
+				"",
+			value, index, length);
 
 		switch (request)
 		{
 			case DeviceRequest | USB_REQ_GET_DESCRIPTOR:
 				ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+				for (int i = 0; i < length; i++)
+				{
+					fprintf(stderr, "%02x ", data[i]);
+				}
+				fprintf(stderr, "]\n");
 				if (ret < 0)
 					goto fail;
 
@@ -280,6 +308,12 @@ namespace usb_pad
 						{
 							ret = sizeof(buzz_hid_report_descriptor);
 							memcpy(data, buzz_hid_report_descriptor, ret);
+						}
+						else if (t == WT_GAMETRAK_CONTROLLER)
+						{
+							fprintf(stderr, "get Gametrak hid descriptor");
+							ret = sizeof(gametrak_ps2_hid_report_descriptor);
+							memcpy(data, gametrak_ps2_hid_report_descriptor, ret);
 						}
 						else if (t >= WT_REALPLAY_RACING && t <= WT_REALPLAY_POOL)
 						{
@@ -440,6 +474,30 @@ namespace usb_pad
 				buf[2] = data.buttons & 0xff;
 				buf[3] = (data.buttons >> 8) & 0xff;
 				buf[4] = 0xf0 | ((data.buttons >> 16) & 0xf);
+				break;
+
+			case WT_GAMETRAK_CONTROLLER:
+				memset(buf, 0, 16);
+				// Left X ? // 14 / 15
+				buf[14] = data.clutch & 0xff;
+				buf[15] = data.clutch >> 8;
+				// Left Y
+				buf[2] = data.throttle & 0xff;
+				buf[3] = data.throttle >> 8;
+				// Left Z
+				buf[4] = data.brake & 0xff;
+				buf[5] = data.brake >> 8;
+				// Right X
+				buf[6] = data.clutch & 0xff;
+				buf[7] = data.clutch >> 8;
+				// Right Y
+				buf[8] = data.throttle & 0xff;
+				buf[9] = data.throttle >> 8;
+				// Right Z
+				buf[10] = data.brake & 0xff;
+				buf[11] = data.brake >> 8;
+				// Foot button
+				buf[12] = data.buttons;
 				break;
 
 			case WT_REALPLAY_RACING:
@@ -837,6 +895,79 @@ namespace usb_pad
 	}
 
 	int BuzzDevice::Freeze(int mode, USBDevice* dev, void* data)
+	{
+		return PadDevice::Freeze(mode, dev, data);
+	}
+
+	// ---- Gametrak ----
+
+	USBDevice* GametrakDevice::CreateDevice(int port)
+	{
+		std::string varApi;
+#ifdef _WIN32
+		std::wstring tmp;
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, tmp);
+		varApi = wstr_to_str(tmp);
+#else
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, varApi);
+#endif
+		PadProxyBase* proxy = RegisterPad::instance().Proxy(varApi);
+		if (!proxy)
+		{
+			Console.WriteLn("Gametrak: Invalid input API.");
+			return NULL;
+		}
+
+		Pad* pad = proxy->CreateObject(port, TypeName());
+
+		if (!pad)
+			return NULL;
+
+		pad->Type(WT_GAMETRAK_CONTROLLER);
+		PADState* s = new PADState();
+
+		s->desc.full = &s->desc_dev;
+		s->desc.str = gametrak_desc_strings;
+
+		if (usb_desc_parse_dev(gametrak_dev_descriptor, sizeof(gametrak_dev_descriptor), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (usb_desc_parse_config(gametrak_config_descriptor, sizeof(gametrak_config_descriptor), s->desc_dev) < 0)
+			goto fail;
+
+		s->f.dev_subtype = pad->Type();
+		s->pad = pad;
+		s->port = port;
+		s->dev.speed = USB_SPEED_FULL;
+		s->dev.klass.handle_attach = usb_desc_attach;
+		s->dev.klass.handle_reset = pad_handle_reset;
+		s->dev.klass.handle_control = pad_handle_control;
+		s->dev.klass.handle_data = pad_handle_data;
+		s->dev.klass.unrealize = pad_handle_destroy;
+		s->dev.klass.open = pad_open;
+		s->dev.klass.close = pad_close;
+		s->dev.klass.usb_desc = &s->desc;
+		s->dev.klass.product_desc = s->desc.str[2];
+
+		usb_desc_init(&s->dev);
+		usb_ep_init(&s->dev);
+		pad_handle_reset((USBDevice*)s);
+
+		return (USBDevice*)s;
+
+	fail:
+		pad_handle_destroy((USBDevice*)s);
+		return nullptr;
+	}
+
+	int GametrakDevice::Configure(int port, const std::string& api, void* data)
+	{
+		auto proxy = RegisterPad::instance().Proxy(api);
+		if (proxy)
+			return proxy->Configure(port, TypeName(), data);
+		return RESULT_CANCELED;
+	}
+
+	int GametrakDevice::Freeze(int mode, USBDevice* dev, void* data)
 	{
 		return PadDevice::Freeze(mode, dev, data);
 	}

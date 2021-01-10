@@ -57,6 +57,17 @@ namespace usb_pad
 				}
 				pad_copy_data(mType, buf, mWheelData);
 				return 5;
+			} else if (mType == WT_GAMETRAK_CONTROLLER) {
+				mWheelData.buttons |= GetControl(mPort, 0) << 4;
+				mWheelData.clutch = std::lround(GetAxisControl(mPort, CID_SQUARE) * 4096.0f);
+				mWheelData.throttle = std::lround(GetAxisControl(mPort, CID_TRIANGLE) * 4096.0f);
+				mWheelData.brake = std::lround(GetAxisControl(mPort, CID_CROSS) * 4096.0f);
+				delete_this = !delete_this; // simulate a slight move to avoid a game "protection" : controller disconnected
+				mWheelData.clutch = mWheelData.clutch & 0xfffe | delete_this;
+				mWheelData.throttle = mWheelData.throttle & 0xfffe | delete_this;
+				mWheelData.brake = mWheelData.brake & 0xfffe | delete_this;
+				pad_copy_data(mType, buf, mWheelData);
+				return 16;
 			} else if (mType >= WT_REALPLAY_RACING && mType <= WT_REALPLAY_POOL) {
 				for (int i = 0; i < 8; i++) {
 					if (GetControl(mPort, i)) {
