@@ -276,11 +276,11 @@ __fi void dmaIPU0() // fromIPU
 
 __fi void dmaIPU1() // toIPU
 {
-	IPU_LOG("IPU1DMAStart QWC %x, MADR %x, CHCR %x, TADR %x", ipu1ch.qwc, ipu1ch.madr, ipu1ch.chcr._u32, ipu1ch.tadr);
+	IPU_LOG2("IPU1DMAStart QWC %x, MADR %x, CHCR %x, TADR %x", ipu1ch.qwc, ipu1ch.madr, ipu1ch.chcr._u32, ipu1ch.tadr);
 
 	if (ipu1ch.chcr.MOD == CHAIN_MODE)  //Chain Mode
 	{
-		IPU_LOG("Setting up IPU1 Chain mode");
+		IPU_LOG2("Setting up IPU1 Chain mode");
 		if(ipu1ch.qwc == 0)
 		{
 			IPU1Status.InProgress = false;
@@ -288,7 +288,7 @@ __fi void dmaIPU1() // toIPU
 		}
 		else
 		{   //Attempting to continue a previous chain
-			IPU_LOG("Resuming DMA TAG %x", (ipu1ch.chcr.TAG >> 12));
+			IPU_LOG2("Resuming DMA TAG %x", (ipu1ch.chcr.TAG >> 12));
 			//We MUST check the CHCR for the tag it last knew, it can be manipulated!
 			IPU1Status.ChainMode = (ipu1ch.chcr.TAG >> 12) & 0x7;
 			IPU1Status.InProgress = true;
@@ -307,7 +307,7 @@ __fi void dmaIPU1() // toIPU
 	}
 	else //Normal Mode
 	{
-			IPU_LOG("Setting up IPU1 Normal mode");
+			IPU_LOG2("Setting up IPU1 Normal mode");
 			IPU1Status.InProgress = true;
 			IPU1Status.DMAFinished = true;
 			IPU1Status.DMAMode = DMA_MODE_NORMAL;

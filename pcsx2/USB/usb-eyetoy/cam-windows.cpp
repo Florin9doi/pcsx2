@@ -392,9 +392,9 @@ namespace usb_eyetoy
 				for (int x = 0; x < width; x++)
 				{
 					unsigned char* ptr = rgbData + (y * width + x) * bytesPerPixel;
-					ptr[0] = 255 - y;
-					ptr[1] = y;
-					ptr[2] = 255 - y;
+					ptr[0] = x * 255 / width;
+					ptr[1] = 0;
+					ptr[2] = 0;
 				}
 			}
 			unsigned char* mpegData = (unsigned char*)calloc(1, width * height * bytesPerPixel);
