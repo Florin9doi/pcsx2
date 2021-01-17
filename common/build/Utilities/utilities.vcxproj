@@ -43,7 +43,7 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="PropertySheets">
     <Import Project="..\..\vsprops\CommonLibrary.props" />
-    <Import Project="..\..\vsprops\3rdpartyDeps.props"/>
+    <Import Project="..\..\vsprops\3rdpartyDeps.props" />
     <Import Project="..\..\vsprops\pthreads.props" />
     <Import Condition="$(Configuration.Contains(Debug))" Project="..\..\vsprops\CodeGen_Debug.props" />
     <Import Condition="$(Configuration.Contains(Devel))" Project="..\..\vsprops\CodeGen_Devel.props" />
@@ -63,6 +63,8 @@
       <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Devel|Win32'">false</MinimalRebuild>
       <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</MinimalRebuild>
       <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">false</MinimalRebuild>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</WholeProgramOptimization>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</WholeProgramOptimization>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
