@@ -43,9 +43,12 @@ if %ERRORLEVEL% NEQ 0 (
   echo #define SVN_MODS 0 >> "%CD%\svnrev.h"
   echo #define GIT_REV "" >> "%CD%\svnrev.h"
 ) else (
-  echo #define SVN_REV %REV%ll > "%CD%\svnrev.h"
-  echo #define SVN_MODS 0 /* Not implemented at the moment. */ >> "%CD%\svnrev.h"
-  echo #define GIT_REV "%GIT_REV%" >> "%CD%\svnrev.h"
+  findstr /c:"%GIT_REV%" "%CD%\svnrev.h" > NUL 2>&1
+  if ERRORLEVEL 1 (
+    echo #define SVN_REV %REV%ll > "%CD%\svnrev.h"
+    echo #define SVN_MODS 0 /* Not implemented at the moment. */ >> "%CD%\svnrev.h"
+    echo #define GIT_REV "%GIT_REV%" >> "%CD%\svnrev.h"
+  )
 )
 
 ENDLOCAL
