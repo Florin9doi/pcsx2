@@ -59,6 +59,7 @@ set(pcsx2Sources
 	COP0.cpp
 	COP2.cpp
 	Counters.cpp
+	des.cpp
 	Dmac.cpp
 	GameDatabase.cpp
 	Elfheader.cpp
@@ -147,6 +148,7 @@ set(pcsx2Headers
 	Config.h
 	COP0.h
 	Counters.h
+	des.h
 	Dmac.h
 	GameDatabase.h
 	Elfheader.h
