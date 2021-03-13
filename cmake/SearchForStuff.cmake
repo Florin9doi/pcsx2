@@ -80,6 +80,7 @@ endif()
 
 set(CMAKE_FIND_FRAMEWORK ${FIND_FRAMEWORK_BACKUP})
 
+add_subdirectory(3rdparty/des)
 add_subdirectory(3rdparty/fast_float EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/lzma EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/libchdr EXCLUDE_FROM_ALL)
