@@ -395,7 +395,9 @@ void generateIvSeedNonce()
 void generateResponse()
 {
 	uint8_t ChallengeIV[8] = { /* SHA256: e7b02f4f8d99a58b96dbca4db81c5d666ea7c46fbf6e1d5c045eaba0ee25416a */ };
-	FILE *f = fopen("civ.bin", "rb");
+	char filename[1024];
+	snprintf(filename, sizeof(filename), "%s/%s", g_Conf->Folders.Bios.ToString().ToStdString().c_str(), "civ.bin");
+	FILE *f = fopen(filename, "rb");
 	if (f)
 	{
 		fread(ChallengeIV, 1, sizeof(ChallengeIV), f);

@@ -870,7 +870,9 @@ void cdvdReset()
 	cdvd.RTC.year = (u8)(curtime.GetYear(wxDateTime::GMT9) - 2000);
 
 	{
-		FILE *f = fopen("eks.bin", "rb");
+		char filename[1024];
+		snprintf(filename, sizeof(filename), "%s/%s", g_Conf->Folders.Bios.ToString().ToStdString().c_str(), "eks.bin");
+		FILE *f = fopen(filename, "rb");
 		if (f)
 		{
 			fread(g_EncryptedKeyStore, 1, sizeof(g_EncryptedKeyStore), f);
@@ -879,7 +881,9 @@ void cdvdReset()
 	}
 
 	{
-		FILE *f = fopen("cks.bin", "rb");
+		char filename[1024];
+		snprintf(filename, sizeof(filename), "%s/%s", g_Conf->Folders.Bios.ToString().ToStdString().c_str(), "cks.bin");
+		FILE *f = fopen(filename, "rb");
 		if (f)
 		{
 			fread(g_cardKeyStore, 1, sizeof(g_cardKeyStore), f);
@@ -888,7 +892,9 @@ void cdvdReset()
 	}
 
 	{
-		FILE *f = fopen("kek.bin", "rb");
+		char filename[1024];
+		snprintf(filename, sizeof(filename), "%s/%s", g_Conf->Folders.Bios.ToString().ToStdString().c_str(), "kek.bin");
+		FILE* f = fopen(filename, "rb");
 		if (f)
 		{
 			fread(g_KeyStoreKey, 1, sizeof(g_KeyStoreKey), f);
