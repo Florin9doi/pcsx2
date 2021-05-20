@@ -66,6 +66,19 @@ namespace usb_hid
 		return nullptr;
 	}
 
+	std::list<std::string> HIDMouseDevice::ListAPIs()
+	{
+		return RegisterUsbHID::instance().Names();
+	}
+
+	const TCHAR* HIDMouseDevice::LongAPIName(const std::string& name)
+	{
+		auto proxy = RegisterUsbHID::instance().Proxy(name);
+		if (proxy)
+			return proxy->Name();
+		return nullptr;
+	}
+
 	std::list<std::string> BeatManiaDevice::ListAPIs()
 	{
 		return RegisterUsbHID::instance().Names();
@@ -78,12 +91,13 @@ namespace usb_hid
 			return proxy->Name();
 		return nullptr;
 	}
-	std::list<std::string> HIDMouseDevice::ListAPIs()
+
+	std::list<std::string> GunCon2Device::ListAPIs()
 	{
 		return RegisterUsbHID::instance().Names();
 	}
 
-	const TCHAR* HIDMouseDevice::LongAPIName(const std::string& name)
+	const TCHAR* GunCon2Device::LongAPIName(const std::string& name)
 	{
 		auto proxy = RegisterUsbHID::instance().Proxy(name);
 		if (proxy)
@@ -114,11 +128,16 @@ namespace usb_hid
 		"HID Keyboard",
 	};
 
-
 	static const USBDescStrings beatmania_dadada_desc_strings = {
 		"",
 		"KONAMI CPJ1",
 		"USB JIS Mini Keyboard",
+	};
+
+	static const USBDescStrings guncon2_desc_strings = {
+		"",
+		"",
+		"",
 	};
 
 
@@ -535,6 +554,55 @@ namespace usb_hid
 		// 68 bytes
 	};
 
+	static const uint8_t guncon2_dev_desc[] = {
+		0x12, // bLength
+		0x01, // bDescriptorType (Device)
+		0x00, 0x01, // bcdUSB 1.00
+		0xFF, // bDeviceClass
+		0x00, // bDeviceSubClass
+		0x00, // bDeviceProtocol
+		0x08, // bMaxPacketSize0 8
+		0x9A, 0x0B, // idVendor 0x0B9A
+		0x6A, 0x01, // idProduct 0x016A
+		0x00, 0x01, // bcdDevice 2.00
+		0x00, // iManufacturer (String Index)
+		0x00, // iProduct (String Index)
+		0x00, // iSerialNumber (String Index)
+		0x01, // bNumConfigurations 1
+
+		// 18 bytes
+	};
+
+	static const uint8_t guncon2_config_desc[] = {
+		0x09, // bLength
+		0x02, // bDescriptorType (Configuration)
+		0x19, 0x00, // wTotalLength 25
+		0x01, // bNumInterfaces 1
+		0x01, // bConfigurationValue
+		0x00, // iConfiguration (String Index)
+		0x80, // bmAttributes
+		0x19, // bMaxPower 50mA
+
+		0x09, // bLength
+		0x04, // bDescriptorType (Interface)
+		0x00, // bInterfaceNumber 0
+		0x00, // bAlternateSetting
+		0x01, // bNumEndpoints 1
+		0xFF, // bInterfaceClass
+		0x6A, // bInterfaceSubClass
+		0x00, // bInterfaceProtocol
+		0x00, // iInterface (String Index)
+
+		0x07, // bLength
+		0x05, // bDescriptorType (Endpoint)
+		0x81, // bEndpointAddress (IN/D2H)
+		0x03, // bmAttributes (Interrupt)
+		0x08, 0x00, // wMaxPacketSize 8
+		0x08, // bInterval 8 (unit depends on device speed)
+
+		// 25 bytes
+	};
+
 	static void usb_hid_changed(HIDState* hs)
 	{
 		UsbHIDState* us = CONTAINER_OF(hs, UsbHIDState, f.hid);
@@ -556,10 +624,24 @@ namespace usb_hid
 		HIDState* hs = &us->f.hid;
 		int ret;
 
+		fprintf(stderr, "Florin: usb_ctrl; req=%4x (%s), val=%4x, idx=%4x, len=%4x : [",
+			request,
+			(request == 5)      ? "setAddr" :
+			(request == 0x8006) ? "getDesc" :
+			(request == 9)      ? "setConf" :
+			(request == 0x2109) ? "setRepr" :
+                                  "",
+			value, index, length);
+
 		DevCon.WriteLn("usb-hid: req %04X val: %04X idx: %04X len: %d\n", request, value, index, length);
 		ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
 		if (ret >= 0)
 		{
+			for (int i = 0; i < length; i++)
+			{
+				fprintf(stderr, "%02x ", data[i]);
+			}
+			fprintf(stderr, "]\n");
 			return;
 		}
 
@@ -614,6 +696,15 @@ namespace usb_hid
 				if (hs->kind == HID_KEYBOARD)
 				{
 					p->actual_length = hid_keyboard_write(hs, data, length);
+				}
+				else if (/*hs->kind == HID_MOUSE &&*/ hs->sub_kind == HID_SUBKIND_GUNCON2)
+				{
+					for (int i = 0; i < length; i++)
+					{
+						fprintf(stderr, "%02x ", data[i]);
+					}
+					fprintf(stderr, "]\n");
+					p->actual_length = 0;
 				}
 				else
 				{
@@ -685,6 +776,11 @@ namespace usb_hid
 					{
 						len = hid_keyboard_poll(hs, buf.data(), p->iov.size);
 					}
+					for (int i = 0; i < len; i++)
+					{
+						printf("%02x ", buf.data()[i]);
+					}
+					printf("\n");
 					usb_packet_copy(p, buf.data(), len);
 				}
 				else
@@ -776,7 +872,6 @@ namespace usb_hid
 		s->intr = usb_ep_get(&s->dev, USB_TOKEN_IN, 1);
 		hid_init(&s->f.hid, HID_KEYBOARD, usb_hid_changed);
 		s->usbhid->SetHIDState(&s->f.hid);
-		s->usbhid->SetHIDType(HIDTYPE_KBD);
 
 		usb_hid_handle_reset((USBDevice*)s);
 
@@ -875,7 +970,6 @@ namespace usb_hid
 		s->intr = usb_ep_get(&s->dev, USB_TOKEN_IN, 1);
 		hid_init(&s->f.hid, HID_MOUSE, usb_hid_changed);
 		s->usbhid->SetHIDState(&s->f.hid);
-		s->usbhid->SetHIDType(HIDTYPE_MOUSE);
 
 		usb_hid_handle_reset((USBDevice*)s);
 
@@ -978,7 +1072,6 @@ namespace usb_hid
 		hid_init(&s->f.hid, HID_KEYBOARD, usb_hid_changed);
 		s->f.hid.sub_kind = HID_SUBKIND_BEATMANIA;
 		s->usbhid->SetHIDState(&s->f.hid);
-		s->usbhid->SetHIDType(HIDTYPE_KBD);
 
 		usb_hid_handle_reset((USBDevice*)s);
 
@@ -997,6 +1090,84 @@ namespace usb_hid
 	}
 
 	int BeatManiaDevice::Freeze(int mode, USBDevice* dev, void* data)
+	{
+		return HIDKbdDevice::Freeze(mode, dev, data);
+	}
+
+	// ---- GunCon2 ----
+
+	USBDevice* GunCon2Device::CreateDevice(int port)
+	{
+		DevCon.WriteLn("%s\n", __func__);
+		UsbHIDState* s;
+
+		std::string varApi;
+#ifdef _WIN32
+		std::wstring tmp;
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, tmp);
+		varApi = wstr_to_str(tmp);
+#else
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, varApi);
+#endif
+		UsbHIDProxyBase* proxy = RegisterUsbHID::instance().Proxy(varApi);
+		if (!proxy)
+		{
+			Console.WriteLn("Invalid HID API: %s\n", varApi.c_str());
+			return nullptr;
+		}
+
+		UsbHID* usbhid = proxy->CreateObject(port, TypeName());
+
+		if (!usbhid)
+			return nullptr;
+
+		s = new UsbHIDState();
+
+		s->desc.full = &s->desc_dev;
+		s->desc.str = guncon2_desc_strings;
+
+		if (usb_desc_parse_dev(guncon2_dev_desc, sizeof(guncon2_dev_desc), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (usb_desc_parse_config(guncon2_config_desc, sizeof(guncon2_config_desc), s->desc_dev) < 0)
+			goto fail;
+
+		s->usbhid = usbhid;
+		s->dev.speed = USB_SPEED_FULL;
+		s->dev.klass.handle_attach = usb_desc_attach;
+		s->dev.klass.handle_reset = usb_hid_handle_reset;
+		s->dev.klass.handle_control = usb_hid_handle_control;
+		s->dev.klass.handle_data = usb_hid_handle_data;
+		s->dev.klass.unrealize = usb_hid_unrealize;
+		s->dev.klass.open = usb_hid_open;
+		s->dev.klass.close = usb_hid_close;
+		s->dev.klass.usb_desc = &s->desc;
+		s->dev.klass.product_desc = s->desc.str[2];
+		s->port = port;
+
+		usb_desc_init(&s->dev);
+		usb_ep_init(&s->dev);
+		s->intr = usb_ep_get(&s->dev, USB_TOKEN_IN, 1);
+		hid_init(&s->f.hid, HID_TABLET, usb_hid_changed);
+		s->f.hid.sub_kind = HID_SUBKIND_GUNCON2;
+		s->usbhid->SetHIDState(&s->f.hid);
+
+		usb_hid_handle_reset((USBDevice*)s);
+
+		return (USBDevice*)s;
+	fail:
+		usb_hid_unrealize((USBDevice*)s);
+		return nullptr;
+	}
+
+	int GunCon2Device::Configure(int port, const std::string& api, void* data)
+	{
+		auto proxy = RegisterUsbHID::instance().Proxy(api);
+		if (proxy)
+			return proxy->Configure(port, TypeName(), HIDTYPE_MOUSE, data);
+		return RESULT_CANCELED;
+	}
+
+	int GunCon2Device::Freeze(int mode, USBDevice* dev, void* data)
 	{
 		return HIDKbdDevice::Freeze(mode, dev, data);
 	}

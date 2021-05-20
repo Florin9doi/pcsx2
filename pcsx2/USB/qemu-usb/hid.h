@@ -33,6 +33,7 @@
 #define HID_KEYBOARD 3
 // idk
 #define HID_SUBKIND_BEATMANIA 1
+#define HID_SUBKIND_GUNCON2 2
 
 /* scancode without modifiers */
 #define SCANCODE_KEYMASK 0xff

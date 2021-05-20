@@ -33,7 +33,6 @@ namespace usb_hid
 	public:
 		UsbHID(int port, const char* dev_type)
 			: mPort(port)
-			, mDevType(dev_type)
 		{
 		}
 		virtual ~UsbHID() {}
@@ -46,13 +45,11 @@ namespace usb_hid
 		virtual int Port() { return mPort; }
 		virtual void Port(int port) { mPort = port; }
 		virtual void SetHIDState(HIDState* hs) { mHIDState = hs; }
-		virtual void SetHIDType(HIDType t) { mHIDType = t; }
 
 	protected:
 		int mPort;
 		HIDState* mHIDState;
 		HIDType mHIDType;
-		const char* mDevType;
 	};
 
 	class HIDKbdDevice
@@ -113,6 +110,29 @@ namespace usb_hid
 		static const char* TypeName()
 		{
 			return "beatmania";
+		}
+		static std::list<std::string> ListAPIs();
+		static const TCHAR* LongAPIName(const std::string& name);
+		static int Configure(int port, const std::string& api, void* data);
+		static int Freeze(int mode, USBDevice* dev, void* data);
+		static std::vector<std::string> SubTypes()
+		{
+			return {};
+		}
+	};
+
+	class GunCon2Device
+	{
+	public:
+		virtual ~GunCon2Device() {}
+		static USBDevice* CreateDevice(int port);
+		static const TCHAR* Name()
+		{
+			return TEXT("GunCon2");
+		}
+		static const char* TypeName()
+		{
+			return "guncon2";
 		}
 		static std::list<std::string> ListAPIs();
 		static const TCHAR* LongAPIName(const std::string& name);
