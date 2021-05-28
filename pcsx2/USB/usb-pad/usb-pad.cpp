@@ -63,6 +63,11 @@ namespace usb_pad
 		"In2Games",
 		"Real Play"};
 
+	static const USBDescStrings trance_vibrator_desc_strings = {
+		"",
+		"ASCII CORPORATION",
+		"ASCII Vib      "};
+
 	std::list<std::string> PadDevice::ListAPIs()
 	{
 		return RegisterPad::instance().Names();
@@ -112,6 +117,16 @@ namespace usb_pad
 	}
 
 	const TCHAR* RealPlayDevice::LongAPIName(const std::string& name)
+	{
+		return PadDevice::LongAPIName(name);
+	}
+
+	std::list<std::string> TranceVibratorDevice::ListAPIs()
+	{
+		return PadDevice::ListAPIs();
+	}
+
+	const TCHAR* TranceVibratorDevice::LongAPIName(const std::string& name)
 	{
 		return PadDevice::LongAPIName(name);
 	}
@@ -331,6 +346,12 @@ namespace usb_pad
 				break;
 			case SET_IDLE:
 				break;
+			case VendorDeviceOutRequest:
+				for (int i = 0; i < length; i++)
+				{
+					fprintf(stderr, "%02x ", data[i]);
+				}
+				fprintf(stderr, "] Trance Vibrator\n");
 			default:
 				ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
 				if (ret >= 0)
@@ -1036,6 +1057,79 @@ namespace usb_pad
 	}
 
 	int RealPlayDevice::Freeze(int mode, USBDevice* dev, void* data)
+	{
+		return PadDevice::Freeze(mode, dev, data);
+	}
+
+	// ---- Trance Vibrator ----
+
+	USBDevice* TranceVibratorDevice::CreateDevice(int port)
+	{
+		std::string varApi;
+#ifdef _WIN32
+		std::wstring tmp;
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, tmp);
+		varApi = wstr_to_str(tmp);
+#else
+		LoadSetting(nullptr, port, TypeName(), N_DEVICE_API, varApi);
+#endif
+		PadProxyBase* proxy = RegisterPad::instance().Proxy(varApi);
+		if (!proxy)
+		{
+			Console.WriteLn("Gametrak: Invalid input API.");
+			return NULL;
+		}
+
+		Pad* pad = proxy->CreateObject(port, TypeName());
+
+		if (!pad)
+			return NULL;
+
+		pad->Type(WT_TRANCE_VIBRATOR);
+		PADState* s = new PADState();
+
+		s->desc.full = &s->desc_dev;
+		s->desc.str = trance_vibrator_desc_strings;
+
+		if (usb_desc_parse_dev(trance_vibrator_dev_descriptor, sizeof(trance_vibrator_dev_descriptor), s->desc, s->desc_dev) < 0)
+			goto fail;
+		if (usb_desc_parse_config(trance_vibrator_config_descriptor, sizeof(trance_vibrator_config_descriptor), s->desc_dev) < 0)
+			goto fail;
+
+		s->f.dev_subtype = pad->Type();
+		s->pad = pad;
+		s->port = port;
+		s->dev.speed = USB_SPEED_FULL;
+		s->dev.klass.handle_attach = usb_desc_attach;
+		s->dev.klass.handle_reset = pad_handle_reset;
+		s->dev.klass.handle_control = pad_handle_control;
+		s->dev.klass.handle_data = pad_handle_data;
+		s->dev.klass.unrealize = pad_handle_destroy;
+		s->dev.klass.open = pad_open;
+		s->dev.klass.close = pad_close;
+		s->dev.klass.usb_desc = &s->desc;
+		s->dev.klass.product_desc = s->desc.str[2];
+
+		usb_desc_init(&s->dev);
+		usb_ep_init(&s->dev);
+		pad_handle_reset((USBDevice*)s);
+
+		return (USBDevice*)s;
+
+	fail:
+		pad_handle_destroy((USBDevice*)s);
+		return nullptr;
+	}
+
+	int TranceVibratorDevice::Configure(int port, const std::string& api, void* data)
+	{
+		auto proxy = RegisterPad::instance().Proxy(api);
+		if (proxy)
+			return proxy->Configure(port, TypeName(), data);
+		return RESULT_CANCELED;
+	}
+
+	int TranceVibratorDevice::Freeze(int mode, USBDevice* dev, void* data)
 	{
 		return PadDevice::Freeze(mode, dev, data);
 	}

@@ -41,6 +41,7 @@ void RegisterDevice::Register()
 	inst.Add(DEVTYPE_EYETOY, new DeviceProxy<usb_eyetoy::EyeToyWebCamDevice>());
 	inst.Add(DEVTYPE_BEATMANIA_DADADA, new DeviceProxy<usb_hid::BeatManiaDevice>());
 	inst.Add(DEVTYPE_GUNCON2, new DeviceProxy<usb_hid::GunCon2Device>());
+	inst.Add(DEVTYPE_TRANCE_VIBRATOR, new DeviceProxy<usb_pad::TranceVibratorDevice>());
 	inst.Add(DEVTYPE_SEGA_SEAMIC, new DeviceProxy<usb_pad::SeamicDevice>());
 
 	RegisterAPIs();
