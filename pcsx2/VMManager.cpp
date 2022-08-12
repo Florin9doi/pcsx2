@@ -165,6 +165,7 @@ static std::mutex s_save_state_threads_mutex;
 
 static std::recursive_mutex s_info_mutex;
 static std::string s_disc_serial;
+static u32 s_cdvd_offset = 0;
 static std::string s_disc_elf;
 static std::string s_disc_version;
 static std::string s_title;
@@ -333,6 +334,12 @@ std::string VMManager::GetDiscSerial()
 	std::unique_lock lock(s_info_mutex);
 	return s_disc_serial;
 }
+
+u32 VMManager::GetCdvdOffset()
+{
+	std::unique_lock lock(s_info_mutex);
+	return s_cdvd_offset;
+};
 
 std::string VMManager::GetDiscELF()
 {
@@ -1108,6 +1115,7 @@ void VMManager::UpdateDiscDetails(bool booting)
 					title = std::move(game_title);
 				}
 
+				s_cdvd_offset = game->cdvdOffset;
 				memcardFilters = game->memcardFiltersAsString();
 			}
 			else

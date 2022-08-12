@@ -92,6 +92,9 @@ namespace VMManager
 	/// Returns the serial of the disc currently running.
 	std::string GetDiscSerial();
 
+	/// Returns the CDVD offset of the disc currently running.
+	u32 GetCdvdOffset();
+
 	/// Returns the path of the main ELF of the disc currently running.
 	std::string GetDiscELF();
 
