@@ -127,6 +127,7 @@ static std::string s_game_serial;
 static std::string s_game_name;
 static std::string s_elf_override;
 static std::string s_input_profile_name;
+static u32 s_cdvd_offset = 0;
 static u32 s_active_game_fixes = 0;
 static std::vector<u8> s_widescreen_cheats_data;
 static bool s_widescreen_cheats_loaded = false;
@@ -235,6 +236,12 @@ std::string VMManager::GetGameName()
 	std::unique_lock lock(s_info_mutex);
 	return s_game_name;
 }
+
+u32 VMManager::GetCdvdOffset()
+{
+	std::unique_lock lock(s_info_mutex);
+	return s_cdvd_offset;
+};
 
 bool VMManager::Internal::InitializeGlobals()
 {
@@ -665,6 +672,7 @@ void VMManager::UpdateRunningGame(bool resetting, bool game_starting)
 		if (const GameDatabaseSchema::GameEntry* game = GameDatabase::findGame(s_game_serial))
 		{
 			s_game_name = game->name;
+			s_cdvd_offset = game->cdvdOffset;
 			memcardFilters = game->memcardFiltersAsString();
 		}
 		else

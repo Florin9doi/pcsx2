@@ -79,6 +79,9 @@ namespace VMManager
 	/// Returns the name of the disc/executable currently running.
 	std::string GetGameName();
 
+	/// Returns the CDVD offset of the disc currently running.
+	u32 GetCdvdOffset();
+
 	/// Loads global settings (i.e. EmuConfig).
 	void LoadSettings();
 
