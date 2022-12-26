@@ -397,7 +397,7 @@ std::optional<InputBindingKey> SDLInputSource::ParseKeyString(const std::string_
 			if (auto value = StringUtil::FromChars<u32>(axis_name.substr(4), 10, &end))
 			{
 				key.source_subtype = InputSubclass::ControllerAxis;
-				key.data = *value;
+				key.data = *value + std::size(s_sdl_axis_names);
 				key.modifier = (binding[0] == '-') ? InputModifier::Negate : InputModifier::None;
 				key.invert = (end == "~");
 				return key;
@@ -451,7 +451,7 @@ std::optional<InputBindingKey> SDLInputSource::ParseKeyString(const std::string_
 			if (auto value = StringUtil::FromChars<u32>(binding.substr(6)))
 			{
 				key.source_subtype = InputSubclass::ControllerButton;
-				key.data = *value;
+				key.data = *value + std::size(s_sdl_button_names);
 				return key;
 			}
 		}
@@ -482,14 +482,14 @@ TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key)
 			if (key.data < std::size(s_sdl_axis_names))
 				ret.format("SDL-{}/{}{}", static_cast<u32>(key.source_index), modifier, s_sdl_axis_names[key.data]);
 			else
-				ret.format("SDL-{}/{}Axis{}{}", static_cast<u32>(key.source_index), modifier, key.data, (key.invert && !ShouldIgnoreInversion()) ? "~" : "");
+				ret.format("SDL-{}/{}Axis{}{}", static_cast<u32>(key.source_index), modifier, key.data - std::size(s_sdl_axis_names), (key.invert && !ShouldIgnoreInversion()) ? "~" : "");
 		}
 		else if (key.source_subtype == InputSubclass::ControllerButton)
 		{
 			if (key.data < std::size(s_sdl_button_names))
 				ret.format("SDL-{}/{}", static_cast<u32>(key.source_index), s_sdl_button_names[key.data]);
 			else
-				ret.format("SDL-{}/Button{}", static_cast<u32>(key.source_index), key.data);
+				ret.format("SDL-{}/Button{}", static_cast<u32>(key.source_index), key.data - std::size(s_sdl_button_names));
 		}
 		else if (key.source_subtype == InputSubclass::ControllerHat)
 		{
