@@ -168,14 +168,16 @@ static bool LoadBiosVersion(std::FILE* fp, u32& version, std::string& descriptio
 
 		char vermaj[3] = {romver[0], romver[1], 0};
 		char vermin[3] = {romver[2], romver[3], 0};
-		description = StringUtil::StdStringFromFormat("%-7s v%s.%s(%c%c/%c%c/%c%c%c%c)  %s %s",
+		description = StringUtil::StdStringFromFormat("%-7s v%s.%s(%c%c/%c%c/%c%c%c%c)  %-7s %s",
 			zone.c_str(),
 			vermaj, vermin,
 			romver[12], romver[13], // day
 			romver[10], romver[11], // month
 			romver[6], romver[7], romver[8], romver[9], // year!
-			(romver[5] == 'C') ? "Console" : (romver[5] == 'D') ? "Devel" :
-																  "",
+			(romver[1] == '1' && romver[2] == '8') || (romver[1] == '2' && romver[2] == '1') ? "PSX" // v1.80 / v2.10
+				: romver[5] == 'C' ? "Console"
+				: romver[5] == 'D' ? "Devel"
+				: "",
 			serial.c_str());
 
 		version = static_cast<u32>(strtol(vermaj, (char**)NULL, 0) << 8);

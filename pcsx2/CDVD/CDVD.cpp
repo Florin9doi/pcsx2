@@ -2012,7 +2012,7 @@ u8 cdvdRead(u8 key)
 
 		case 0x15: // RSV
 			CDVD_LOG("cdvdRead15(RSV)");
-			return 0x0; //  PSX DESR related, but confirmed to be 0 on normal PS2
+			return 0x1; //  PSX DESR related, but confirmed to be 0 on normal PS2
 
 		case 0x16: // SCOMMAND
 			CDVD_LOG("cdvdRead16(SCMD) %x", cdvd.sCommand);
@@ -2143,6 +2143,15 @@ static bool cdvdCommandErrorHandler()
 static void cdvdWrite04(u8 rt)
 { // NCOMMAND
 	CDVD_LOG("cdvdWrite04: NCMD %s (%x) (ParamP = %x)", nCmdName[rt], rt, cdvd.NCMDParamPos);
+
+	if (rt == N_CD_CHG_SPDL_CTRL) // CdChgSpdlCtrl
+	{
+		Console.WriteLn("sceCdChgSpdlCtrl(%d)", cdvd.NCMDParamBuff[0]);
+		cdvdSetIrq();
+		cdvd.NCMDParamPos = 0;
+		cdvd.NCMDParamCnt = 0;
+		return;
+	}
 
 	if (!(cdvd.Ready & CDVD_DRIVE_READY))
 	{
@@ -2568,11 +2577,6 @@ static void cdvdWrite04(u8 rt)
 			CDVDSECTORREADY_INT(cdvd.ReadTime);
 		}
 		break;
-
-		case N_CD_CHG_SPDL_CTRL: // CdChgSpdlCtrl
-			Console.WriteLn("sceCdChgSpdlCtrl(%d)", cdvd.NCMDParamBuff[0]);
-			cdvdSetIrq();
-			break;
 
 		default: // Should be unreachable, handled in the error handler earlier
 			Console.Warning("NCMD Unknown %x", rt);

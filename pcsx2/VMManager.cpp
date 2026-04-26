@@ -433,10 +433,6 @@ bool VMManager::Internal::CPUThreadInitialize()
 	if (EmuConfig.EnableDiscordPresence)
 		InitializeDiscordPresence();
 
-	// Check for advanced settings status and warn the user if its enabled
-	if (Host::GetBaseBoolSettingValue("UI", "ShowAdvancedSettings", false))
-		Console.Warning("Settings: Advanced Settings are enabled; only proceed if you know what you're doing! No support will be provided if you have the option enabled.");
-
 	return true;
 }
 
@@ -3379,11 +3375,6 @@ void VMManager::WarnAboutUnsafeSettings()
 		append(ICON_PF_MICROCHIP,
 			TRANSLATE_SV("VMManager", "VU Clamp Mode is not set to default, this may break some games."));
 	}
-	if (EmuConfig.Cpu.ExtraMemory)
-	{
-		append(ICON_PF_MICROCHIP,
-			TRANSLATE_SV("VMManager", "Extended RAM is enabled. Compatibility with some games may be affected."));
-	}
 	if (!EmuConfig.EnableGameFixes)
 	{
 		append(ICON_FA_GAMEPAD,
@@ -3406,7 +3397,7 @@ void VMManager::WarnAboutUnsafeSettings()
 			messages.pop_back();
 
 		LogUnsafeSettingsToConsole(messages);
-		Host::AddKeyedOSDMessage("unsafe_settings_warning", std::move(messages), Host::OSD_WARNING_DURATION);
+		Host::AddKeyedOSDMessage("unsafe_settings_warning", std::move(messages), 0.5f);
 	}
 	else
 	{
