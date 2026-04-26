@@ -506,7 +506,7 @@ static __fi void VSyncStart(u64 sCycle)
 	// Memcard IO detection - Uses a tick system to determine when memcards are no longer being written.
 	MemcardBusy::Decrement();
 
-	if (!GSSMODE1reg.SINT)
+	//if (!GSSMODE1reg.SINT)
 	{
 		hwIntcIrq(INTC_VBLANK_S);
 		rcntStartGate(true, sCycle); // Counters Start Gate code

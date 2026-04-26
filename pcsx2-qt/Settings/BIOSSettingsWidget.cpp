@@ -35,6 +35,10 @@ BIOSSettingsWidget::BIOSSettingsWidget(SettingsWindow* settings_dialog, QWidget*
 
 	refreshList();
 
+	QFont font("monospace");
+	font.setStyleHint(QFont::Monospace);
+	m_ui.fileList->setFont(font);
+
 	connect(m_ui.searchDirectory, &QLineEdit::textChanged, this, &BIOSSettingsWidget::refreshList);
 	connect(m_ui.refresh, &QPushButton::clicked, this, &BIOSSettingsWidget::refreshList);
 	connect(m_ui.fileList, &QTreeWidget::currentItemChanged, this, &BIOSSettingsWidget::listItemChanged);
