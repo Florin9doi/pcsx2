@@ -263,6 +263,9 @@ void TraceLogFilters::LoadSave(SettingsWrapper& wrap)
 	SettingsWrapBitBool(IOP.counters);
 	SettingsWrapBitBool(IOP.cdvd);
 	SettingsWrapBitBool(IOP.mdec);
+	SettingsWrapBitBool(IOP.dev9);
+	SettingsWrapBitBool(IOP.hdd);
+	SettingsWrapBitBool(IOP.xfrom);
 
 	SettingsWrapBitBool(MISC.sif);
 }
@@ -303,6 +306,9 @@ void TraceLogFilters::SyncToConfig() const
 	iop.Counters.Enabled = IOP.counters;
 	iop.CDVD.Enabled = IOP.cdvd;
 	iop.MDEC.Enabled = IOP.mdec;
+	iop.DEV9.Enabled = IOP.dev9;
+	iop.HDD.Enabled = IOP.hdd;
+	iop.XFROM.Enabled = IOP.xfrom;
 
 	TraceLogging.SIF.Enabled = MISC.sif;
 

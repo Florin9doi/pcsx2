@@ -195,6 +195,12 @@ DebugSettingsWidget::DebugSettingsWidget(SettingsWindow* settings_dialog, QWidge
 	dialog()->registerWidgetHelp(m_logging.chkIOPCDVD, tr("IOP CDVD"), tr("Unchecked"), tr("Log CDVD hardware activity."));
 	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_logging.chkIOPMDEC, "EmuCore/TraceLog", "IOP.mdec", false);
 	dialog()->registerWidgetHelp(m_logging.chkIOPMDEC, tr("IOP MDEC"), tr("Unchecked"), tr("Log Motion (FMV) Decoder hardware unit activity."));
+	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_logging.chkIOPDEV9, "EmuCore/TraceLog", "IOP.dev9", false);
+	dialog()->registerWidgetHelp(m_logging.chkIOPDEV9, tr("IOP DEV9"), tr("Unchecked"), tr("Log DEV9 unit activity."));
+	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_logging.chkIOPHDD, "EmuCore/TraceLog", "IOP.hdd", false);
+	dialog()->registerWidgetHelp(m_logging.chkIOPHDD, tr("IOP HDD"), tr("Unchecked"), tr("Log Hard Disk Drive unit activity."));
+	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_logging.chkIOPXFROM, "EmuCore/TraceLog", "IOP.xfrom", false);
+	dialog()->registerWidgetHelp(m_logging.chkIOPXFROM, tr("IOP XFROM"), tr("Unchecked"), tr("Log XFROM unit activity."));
 
 	SettingWidgetBinder::BindWidgetToBoolSetting(sif, m_logging.chkEESIF, "EmuCore/TraceLog", "MISC.sif", false);
 	dialog()->registerWidgetHelp(m_logging.chkEESIF, tr("EE SIF"), tr("Unchecked"), tr("Log SIF (EE <-> IOP) activity."));
@@ -272,6 +278,9 @@ void DebugSettingsWidget::onLoggingEnableChanged()
 	m_logging.chkIOPCounters->setEnabled(enabled);
 	m_logging.chkIOPCDVD->setEnabled(enabled);
 	m_logging.chkIOPMDEC->setEnabled(enabled);
+	m_logging.chkIOPDEV9->setEnabled(enabled);
+	m_logging.chkIOPHDD->setEnabled(enabled);
+	m_logging.chkIOPXFROM->setEnabled(enabled);
 
 	g_emu_thread->applySettings();
 }

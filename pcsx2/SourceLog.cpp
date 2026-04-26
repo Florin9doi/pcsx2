@@ -185,7 +185,14 @@ static const LogDescriptor
 
 	LD_IOP_CDVD = {"CDVD", "CDVD", "Detailed logging of CDVD hardware."},
 
-	LD_IOP_MDEC = {"MDEC", "MDEC", "Detailed logging of the Motion (FMV) Decoder hardware unit."};
+	LD_IOP_MDEC = {"MDEC", "MDEC", "Detailed logging of the Motion (FMV) Decoder hardware unit."},
+
+	LD_IOP_DEV9 = {"DEV9", "DEV9", "Detailed logging of the DEV9 unit."},
+
+	LD_IOP_HDD = {"HDD", "HDD", "Detailed logging of the HDD unit."},
+
+	LD_IOP_XFROM = {"XFROM", "XFROM", "Detailed logging of the XFROM unit."};
+
 
 TraceLogPack::TraceLogPack()
 	: SIF(LD_SIF)
@@ -236,5 +243,8 @@ TraceLogPack::IOP_PACK::IOP_PACK()
 	, Counters(LD_IOP_Counters)
 	, CDVD(LD_IOP_CDVD)
 	, MDEC(LD_IOP_MDEC)
+	, DEV9(LD_IOP_DEV9)
+	, HDD(LD_IOP_HDD)
+	, XFROM(LD_IOP_XFROM)
 {
 }

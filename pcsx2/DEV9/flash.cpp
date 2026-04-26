@@ -4,6 +4,7 @@
 // The code has been designed for 64Mb flash and uses as file support the second memory card
 #include <stdio.h>
 //#include <winsock2.h>
+#include "Common.h"
 #include "DEV9.h"
 
 #define PAGE_SIZE_BITS 9
@@ -76,7 +77,7 @@ void FLASHinit()
 		const size_t ret = fread(file, 1, CARD_SIZE_ECC, fd);
 		if (ret != CARD_SIZE_ECC)
 		{
-			DevCon.WriteLn("DEV9: Reading error.");
+			XFROM_LOG("DEV9: Reading error.");
 		}
 
 		fclose(fd);
@@ -94,7 +95,7 @@ u32 FLASHread32(u32 addr, int size)
 		case FLASH_R_DATA:
 			memcpy(&value, &data[counter], size);
 			counter += size;
-			DevCon.WriteLn("DEV9: *FLASH DATA %dbit read 0x%08lX %s", size * 8, value, (ctrl & FLASH_PP_READ) ? "READ_ENABLE" : "READ_DISABLE");
+			XFROM_LOG("DEV9: *FLASH DATA %dbit read 0x%08lX %s", size * 8, value, (ctrl & FLASH_PP_READ) ? "READ_ENABLE" : "READ_DISABLE");
 			if (cmd == SM_CMD_READ3)
 			{
 				if (counter >= PAGE_SIZE_ECC)
@@ -130,33 +131,33 @@ u32 FLASHread32(u32 addr, int size)
 			return value;
 
 		case FLASH_R_CMD:
-			DevCon.WriteLn("DEV9: *FLASH CMD %dbit read %s DENIED", size * 8, getCmdName(cmd));
+			XFROM_LOG("DEV9: *FLASH CMD %dbit read %s DENIED", size * 8, getCmdName(cmd));
 			return cmd;
 
 		case FLASH_R_ADDR:
-			DevCon.WriteLn("DEV9: *FLASH ADDR %dbit read DENIED", size * 8);
+			XFROM_LOG("DEV9: *FLASH ADDR %dbit read DENIED", size * 8);
 			return 0;
 
 		case FLASH_R_CTRL:
-			DevCon.WriteLn("DEV9: *FLASH CTRL %dbit read 0x%08lX", size * 8, ctrl);
+			XFROM_LOG("DEV9: *FLASH CTRL %dbit read 0x%08lX", size * 8, ctrl);
 			return ctrl;
 
 		case FLASH_R_ID:
 			if (cmd == SM_CMD_READID)
 			{
-				DevCon.WriteLn("DEV9: *FLASH ID %dbit read 0x%08lX", size * 8, id);
+				XFROM_LOG("DEV9: *FLASH ID %dbit read 0x%08lX", size * 8, id);
 				return id; //0x98=Toshiba/0xEC=Samsung maker code should be returned first
 			}
 			else if (cmd == SM_CMD_GETSTATUS)
 			{
 				value = 0x80 | ((ctrl & 1) << 6); // 0:0=pass, 6:ready/busy, 7:1=not protected
-				DevCon.WriteLn("DEV9: *FLASH STATUS %dbit read 0x%08lX", size * 8, value);
+				XFROM_LOG("DEV9: *FLASH STATUS %dbit read 0x%08lX", size * 8, value);
 				return value;
 			} //else fall off
 			return 0;
 
 		default:
-			DevCon.WriteLn("DEV9: *FLASH Unknown %dbit read at address %lx", size * 8, addr);
+			XFROM_LOG("DEV9: *FLASH Unknown %dbit read at address %lx", size * 8, addr);
 			return 0;
 	}
 }
@@ -168,7 +169,7 @@ void FLASHwrite32(u32 addr, u32 value, int size)
 	{
 		case FLASH_R_DATA:
 
-			DevCon.WriteLn("DEV9: *FLASH DATA %dbit write 0x%08lX %s", size * 8, value, (ctrl & FLASH_PP_WRITE) ? "WRITE_ENABLE" : "WRITE_DISABLE");
+			XFROM_LOG("DEV9: *FLASH DATA %dbit write 0x%08lX %s", size * 8, value, (ctrl & FLASH_PP_WRITE) ? "WRITE_ENABLE" : "WRITE_DISABLE");
 			memcpy(&data[counter], &value, size);
 			counter += size;
 			counter %= PAGE_SIZE_ECC; //should not get past the last byte, but at the end
@@ -179,7 +180,7 @@ void FLASHwrite32(u32 addr, u32 value, int size)
 			{
 				if ((value != SM_CMD_GETSTATUS) && (value != SM_CMD_RESET))
 				{
-					DevCon.WriteLn("DEV9: *FLASH CMD %dbit write %s ILLEGAL in busy mode - IGNORED", size * 8, getCmdName(value));
+					XFROM_LOG("DEV9: *FLASH CMD %dbit write %s ILLEGAL in busy mode - IGNORED", size * 8, getCmdName(value));
 					break;
 				}
 			}
@@ -187,12 +188,12 @@ void FLASHwrite32(u32 addr, u32 value, int size)
 			{
 				if ((value != SM_CMD_PROGRAMPAGE) && (value != SM_CMD_RESET))
 				{
-					DevCon.WriteLn("DEV9: *FLASH CMD %dbit write %s ILLEGAL after WRITEDATA cmd - IGNORED", size * 8, getCmdName(value));
+					XFROM_LOG("DEV9: *FLASH CMD %dbit write %s ILLEGAL after WRITEDATA cmd - IGNORED", size * 8, getCmdName(value));
 					ctrl &= ~FLASH_PP_READY; //go busy, reset is needed
 					break;
 				}
 			}
-			DevCon.WriteLn("DEV9: *FLASH CMD %dbit write %s", size * 8, getCmdName(value));
+			XFROM_LOG("DEV9: *FLASH CMD %dbit write %s", size * 8, getCmdName(value));
 			switch (value)
 			{ // A8 bit is encoded in READ cmd;)
 				case SM_CMD_READ1:
@@ -250,10 +251,10 @@ void FLASHwrite32(u32 addr, u32 value, int size)
 			break;
 
 		case FLASH_R_ADDR:
-			DevCon.WriteLn("DEV9: *FLASH ADDR %dbit write 0x%08lX", size * 8, value);
+			XFROM_LOG("DEV9: *FLASH ADDR %dbit write 0x%08lX", size * 8, value);
 			address |= (value & 0xFF) << (addrbyte == 0 ? 0 : (1 + 8 * addrbyte));
 			addrbyte++;
-			DevCon.WriteLn("DEV9: *FLASH ADDR = 0x%08lX (addrbyte=%d)", address, addrbyte);
+			XFROM_LOG("DEV9: *FLASH ADDR = 0x%08lX (addrbyte=%d)", address, addrbyte);
 			if (!(value & 0x100))
 			{ // address is complete
 				if ((cmd == SM_CMD_READ1) || (cmd == SM_CMD_READ2) || (cmd == SM_CMD_READ3))
@@ -269,22 +270,22 @@ void FLASHwrite32(u32 addr, u32 value, int size)
 					u32 pages = address - (blocks * BLOCK_SIZE);
 					[[maybe_unused]]const u32 bytes = pages % PAGE_SIZE;
 					pages = pages / PAGE_SIZE;
-					DevCon.WriteLn("DEV9: *FLASH ADDR = 0x%08lX (%d:%d:%d) (addrbyte=%d) FINAL", address, blocks, pages, bytes, addrbyte);
+					XFROM_LOG("DEV9: *FLASH ADDR = 0x%08lX (%d:%d:%d) (addrbyte=%d) FINAL", address, blocks, pages, bytes, addrbyte);
 				}
 			}
 			break;
 
 		case FLASH_R_CTRL:
-			DevCon.WriteLn("DEV9: *FLASH CTRL %dbit write 0x%08lX", size * 8, value);
+			XFROM_LOG("DEV9: *FLASH CTRL %dbit write 0x%08lX", size * 8, value);
 			ctrl = (ctrl & FLASH_PP_READY) | (value & ~FLASH_PP_READY);
 			break;
 
 		case FLASH_R_ID:
-			DevCon.WriteLn("DEV9: *FLASH ID %dbit write 0x%08lX DENIED :P", size * 8, value);
+			XFROM_LOG("DEV9: *FLASH ID %dbit write 0x%08lX DENIED :P", size * 8, value);
 			break;
 
 		default:
-			DevCon.WriteLn("DEV9: *FLASH Unkwnown %dbit write at address 0x%08lX= 0x%08lX IGNORED", size * 8, addr, value);
+			XFROM_LOG("DEV9: *FLASH Unkwnown %dbit write at address 0x%08lX= 0x%08lX IGNORED", size * 8, addr, value);
 			break;
 	}
 }

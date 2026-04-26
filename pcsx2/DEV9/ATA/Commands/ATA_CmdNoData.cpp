@@ -29,7 +29,7 @@ void ATA::HDD_FlushCache() //Can't when DRQ set
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_FlushCache");
+	HDD_LOG("DEV9: HDD_FlushCache");
 
 	if (!writeQueue.IsQueueEmpty())
 	{
@@ -44,7 +44,7 @@ void ATA::HDD_FlushCache() //Can't when DRQ set
 void ATA::HDD_InitDevParameters()
 {
 	PreCmd(); //Ignore DRDY bit
-	DevCon.WriteLn("DEV9: HDD_InitDevParameters");
+	HDD_LOG("DEV9: HDD_InitDevParameters");
 
 	curSectors = regNsector;
 	curHeads = static_cast<u8>((regSelect & 0x7) + 1);
@@ -55,7 +55,7 @@ void ATA::HDD_ReadVerifySectors(bool isLBA48)
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_ReadVerifySectors");
+	HDD_LOG("DEV9: HDD_ReadVerifySectors");
 
 	IDE_CmdLBA48Transform(isLBA48);
 
@@ -78,7 +78,7 @@ void ATA::HDD_Recalibrate()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_Recalibrate");
+	HDD_LOG("DEV9: HDD_Recalibrate");
 
 	lba48 = false;
 	// Report minimum address (LBA 0 or CHS 0/0/1).
@@ -99,7 +99,7 @@ void ATA::HDD_SeekCmd()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_SeekCmd");
+	HDD_LOG("DEV9: HDD_SeekCmd");
 
 	lba48 = false;
 	regStatus &= ~ATA_STAT_SEEK;
@@ -119,7 +119,7 @@ void ATA::HDD_SetFeatures()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_SetFeatures");
+	HDD_LOG("DEV9: HDD_SetFeatures");
 
 	switch (regFeature)
 	{
@@ -139,25 +139,25 @@ void ATA::HDD_SetFeatures()
 			{
 				case 0x00: //pio default
 					//if mode = 1, disable IORDY
-					DevCon.WriteLn("DEV9: PIO Default");
+					HDD_LOG("DEV9: PIO Default");
 					pioMode = 4;
 					mdmaMode = -1;
 					udmaMode = -1;
 					break;
 				case 0x01: //pio mode (3,4)
-					DevCon.WriteLn("DEV9: PIO Mode %i", mode);
+					HDD_LOG("DEV9: PIO Mode %i", mode);
 					pioMode = mode;
 					mdmaMode = -1;
 					udmaMode = -1;
 					break;
 				case 0x04: //Multi word dma mode (0,1,2)
-					DevCon.WriteLn("DEV9: MDMA Mode %i", mode);
+					HDD_LOG("DEV9: MDMA Mode %i", mode);
 					//pioMode = -1;
 					mdmaMode = mode;
 					udmaMode = -1;
 					break;
 				case 0x08: //Ulta dma mode (0,1,2,3,4,5,6)
-					DevCon.WriteLn("DEV9: UDMA Mode %i", mode);
+					HDD_LOG("DEV9: UDMA Mode %i", mode);
 					//pioMode = -1;
 					mdmaMode = -1;
 					udmaMode = mode;
@@ -180,7 +180,7 @@ void ATA::HDD_SetMultipleMode()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_SetMultipleMode");
+	HDD_LOG("DEV9: HDD_SetMultipleMode");
 
 	curMultipleSectorsSetting = regNsector;
 
@@ -191,7 +191,7 @@ void ATA::HDD_Nop()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_Nop");
+	HDD_LOG("DEV9: HDD_Nop");
 
 	if (regFeature == 0)
 	{
@@ -211,7 +211,7 @@ void ATA::HDD_Idle()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_Idle");
+	HDD_LOG("DEV9: HDD_Idle");
 
 	long idleTime = 0; //in seconds
 	if (regNsector >= 1 && regNsector <= 240)
@@ -243,7 +243,7 @@ void ATA::HDD_Idle()
 		}
 	}
 
-	DevCon.WriteLn("DEV9: HDD_Idle for %is", idleTime);
+	HDD_LOG("DEV9: HDD_Idle for %is", idleTime);
 	PostCmdNoData();
 }
 
@@ -251,6 +251,6 @@ void ATA::HDD_IdleImmediate()
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn("DEV9: HDD_IdleImmediate");
+	HDD_LOG("DEV9: HDD_IdleImmediate");
 	PostCmdNoData();
 }

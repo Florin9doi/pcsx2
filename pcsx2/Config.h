@@ -545,7 +545,10 @@ struct TraceLogsIOP
 		dmac : 1,
 		counters : 1,
 		cdvd : 1,
-		mdec : 1;
+		mdec : 1,
+		dev9 : 1,
+		hdd : 1,
+		xfrom : 1;
 	BITFIELD_END
 
 	TraceLogsIOP();
