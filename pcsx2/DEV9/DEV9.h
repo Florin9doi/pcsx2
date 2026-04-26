@@ -26,16 +26,6 @@
 void rx_process(NetPacket* pk);
 bool rx_fifo_can_rx();
 
-#define ETH_DEF "eth0"
-#ifdef _WIN32
-#define HDD_DEF L"DEV9hdd.raw"
-#else
-#define HDD_DEF "DEV9hdd.raw"
-#endif
-
-#define HDD_MIN_GB 40
-#define HDD_MAX_GB 120
-
 typedef struct
 {
 	ATA* ata;
