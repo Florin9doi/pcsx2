@@ -71,7 +71,9 @@ void FLASHinit()
 	calculateECC(data);
 	ctrl = FLASH_PP_READY;
 
-	FILE* fd = fopen("flash.dat", "rb");
+	std::string flashPath(EmuConfig.DEV9.FlashFile);
+	DevCon.WriteLn("DEV9: flashPath : %s", flashPath.c_str());
+	FILE* fd = fopen(flashPath.c_str(), "rb");
 	if (fd != NULL)
 	{
 		const size_t ret = fread(file, 1, CARD_SIZE_ECC, fd);

@@ -190,6 +190,20 @@ DEV9SettingsWidget::DEV9SettingsWidget(SettingsWindow* settings_dialog, QWidget*
 	SettingWidgetBinder::SettingAccessor<QSpinBox>::connectValueChanged(m_ui.hddSizeSpinBox, [&]() { onHddSizeAccessorSpin(); });
 
 	connect(m_ui.hddCreate, &QPushButton::clicked, this, &DEV9SettingsWidget::onHddCreateClicked);
+
+	//////////////////////////////////////////////////////////////////////////
+	// Flash Settings
+	//////////////////////////////////////////////////////////////////////////
+	if (dialog()->isPerGameSettings())
+	{
+		m_ui.flashFile->setText(QString::fromUtf8(dialog()->getStringValue("DEV9/Hdd", "FlashFile", "").value().c_str()));
+		m_ui.flashFile->setPlaceholderText(QString::fromUtf8(Host::GetBaseStringSettingValue("DEV9/Hdd", "FlashFile", "DEV9flash.bin")));
+	}
+	else
+		m_ui.flashFile->setText(QString::fromUtf8(dialog()->getStringValue("DEV9/Hdd", "FlashFile", "DEV9flash.bin").value().c_str()));
+
+	connect(m_ui.flashFile, &QLineEdit::editingFinished, this, &DEV9SettingsWidget::onFlashFileEdit);
+	connect(m_ui.flashBrowseFile, &QPushButton::clicked, this, &DEV9SettingsWidget::onFlashBrowseFileClicked);
 }
 
 void DEV9SettingsWidget::onEthEnabledChanged(Qt::CheckState state)
@@ -708,6 +722,30 @@ void DEV9SettingsWidget::onHddCreateClicked()
 			tr("HDD image created"),
 			QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
 	}
+}
+
+void DEV9SettingsWidget::onFlashBrowseFileClicked()
+{
+	QString path =
+		QDir::toNativeSeparators(QFileDialog::getSaveFileName(QtUtils::GetRootWidget(this), tr("Flash Image File"),
+			!m_ui.flashFile->text().isEmpty() ? m_ui.flashFile->text() : (!m_ui.flashFile->placeholderText().isEmpty() ? m_ui.flashFile->placeholderText() : "DEV9flash.bin"),
+			tr("Flash (*.bin)"), nullptr, QFileDialog::DontConfirmOverwrite));
+
+	if (path.isEmpty())
+		return;
+
+	m_ui.flashFile->setText(path);
+	m_ui.flashFile->editingFinished();
+}
+
+void DEV9SettingsWidget::onFlashFileEdit()
+{
+	// Check if file exists, if so save the FlashFile setting
+	std::string file(m_ui.flashFile->text().toStdString());
+	if (file.empty())
+		dialog()->setStringSettingValue("DEV9/Hdd", "FlashFile", std::nullopt);
+	else
+		dialog()->setStringSettingValue("DEV9/Hdd", "FlashFile", file.c_str());
 }
 
 void DEV9SettingsWidget::UpdateHddSizeUIEnabled()

@@ -413,6 +413,35 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Flash</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="0">
+       <widget class="QLabel" name="flashFileLabel">
+        <property name="text">
+         <string>Flash File:</string>
+        </property>
+        <property name="buddy">
+         <cstring>flashFile</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="flashFile"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="flashBrowseFile">
+        <property name="text">
+         <string>Browse</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Orientation::Vertical</enum>
@@ -455,6 +484,8 @@
   <tabstop>hddSizeSlider</tabstop>
   <tabstop>hddSizeSpinBox</tabstop>
   <tabstop>hddCreate</tabstop>
+  <tabstop>flashFile</tabstop>
+  <tabstop>flashBrowseFile</tabstop>
  </tabstops>
  <resources/>
  <connections/>

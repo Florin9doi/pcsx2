@@ -41,6 +41,9 @@ private Q_SLOTS:
 	void onHddLBA48Changed(Qt::CheckState state);
 	void onHddCreateClicked();
 
+	void onFlashBrowseFileClicked();
+	void onFlashFileEdit();
+
 public:
 	DEV9SettingsWidget(SettingsWindow* settings_dialog, QWidget* parent);
 	~DEV9SettingsWidget();
