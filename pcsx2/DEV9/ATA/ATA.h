@@ -9,6 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "Common.h"
 #include "common/RedtapeWindows.h"
 #include "common/Path.h"
 

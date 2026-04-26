@@ -96,13 +96,13 @@ std::string GetHDDPath()
 
 s32 DEV9init()
 {
-	DevCon.WriteLn("DEV9: DEV9init");
+	DEV9_LOG("DEV9: DEV9init");
 
 	memset(&dev9, 0, sizeof(dev9));
 	dev9.ata = new ATA();
-	DevCon.WriteLn("DEV9: DEV9init2");
+	DEV9_LOG("DEV9: DEV9init2");
 
-	DevCon.WriteLn("DEV9: DEV9init3");
+	DEV9_LOG("DEV9: DEV9init3");
 
 	FLASHinit();
 
@@ -168,20 +168,20 @@ s32 DEV9init()
 		pbd->length = 0;
 	}
 
-	DevCon.WriteLn("DEV9: DEV9init ok");
+	DEV9_LOG("DEV9: DEV9init ok");
 
 	return 0;
 }
 
 void DEV9shutdown()
 {
-	DevCon.WriteLn("DEV9: DEV9shutdown");
+	DEV9_LOG("DEV9: DEV9shutdown");
 	delete dev9.ata;
 }
 
 s32 DEV9open()
 {
-	DevCon.WriteLn("DEV9: DEV9open");
+	DEV9_LOG("DEV9: DEV9open");
 
 	std::string hddPath(GetHDDPath());
 
@@ -200,7 +200,7 @@ s32 DEV9open()
 
 void DEV9close()
 {
-	DevCon.WriteLn("DEV9: DEV9close");
+	DEV9_LOG("DEV9: DEV9close");
 
 	dev9.dma_iop_ptr = nullptr;
 	dev9.ata->Close();
@@ -211,7 +211,7 @@ void DEV9close()
 int DEV9irqHandler(void)
 {
 	//dev9Ru16(SPD_R_INTR_STAT)|= dev9.irqcause;
-	//DevCon.WriteLn("DEV9: DEV9irqHandler %x, %x", dev9.irqcause, dev9.irqmask);
+	//DEV9_LOG("DEV9: DEV9irqHandler %x, %x", dev9.irqcause, dev9.irqmask);
 	if (dev9.irqcause & dev9.irqmask)
 		return 1;
 	return 0;
@@ -219,7 +219,7 @@ int DEV9irqHandler(void)
 
 void _DEV9irq(int cause, int cycles)
 {
-	//DevCon.WriteLn("DEV9: _DEV9irq %x, %x", cause, dev9.irqmask);
+	//DEV9_LOG("DEV9: _DEV9irq %x, %x", cause, dev9.irqmask);
 
 	dev9.irqcause |= cause;
 
@@ -440,14 +440,14 @@ u16 SpeedRead(u32 addr, int width)
 	switch (addr)
 	{
 		case 0x10000020:
-			//DevCon.WriteLn("DEV9: SPD_R_20 %dbit read %x", width, 1);
+			//DEV9_LOG("DEV9: SPD_R_20 %dbit read %x", width, 1);
 			return 1;
 		case SPD_R_INTR_STAT:
-			//DevCon.WriteLn("DEV9: SPD_R_INTR_STAT %dbit read %x", width, dev9.irqcause);
+			//DEV9_LOG("DEV9: SPD_R_INTR_STAT %dbit read %x", width, dev9.irqcause);
 			return dev9.irqcause;
 
 		case SPD_R_INTR_MASK:
-			//DevCon.WriteLn("DEV9: SPD_R_INTR_MASK %dbit read %x", width, dev9.irqmask);
+			//DEV9_LOG("DEV9: SPD_R_INTR_MASK %dbit read %x", width, dev9.irqmask);
 			return dev9.irqmask;
 
 		case SPD_R_PIO_DATA:
@@ -472,16 +472,16 @@ u16 SpeedRead(u32 addr, int width)
 					}
 				}
 			}
-			//DevCon.WriteLn("DEV9: SPD_R_PIO_DATA %dbit read %x", width, hard);
+			//DEV9_LOG("DEV9: SPD_R_PIO_DATA %dbit read %x", width, hard);
 			return hard;
 
 		case SPD_R_REV_1:
-			//DevCon.WriteLn("DEV9: SPD_R_REV_1 %dbit read %x", width, 0);
+			//DEV9_LOG("DEV9: SPD_R_REV_1 %dbit read %x", width, 0);
 			return 0;
 
 		case SPD_R_REV_2:
 			hard = 0x11;
-			//DevCon.WriteLn("DEV9: STD_R_REV_2 %dbit read %x", width, hard);
+			//DEV9_LOG("DEV9: STD_R_REV_2 %dbit read %x", width, hard);
 			return hard;
 
 		case SPD_R_REV_3:
@@ -492,15 +492,15 @@ u16 SpeedRead(u32 addr, int width)
 
 			// TODO: Do we need flash? my 50003 model doesn't report this, but it does report DVR capable aka (1<<4), was that intended?
 			hard |= SPD_CAPS_ATA | SPD_CAPS_FLASH;
-			//DevCon.WriteLn("DEV9: SPD_R_REV_3 %dbit read %x", width, hard);
+			//DEV9_LOG("DEV9: SPD_R_REV_3 %dbit read %x", width, hard);
 			return hard;
 
 		case SPD_R_0e:
 			hard = 0x0002; // Have HDD module inserted
-			DevCon.WriteLn("DEV9: SPD_R_0e %dbit read %x", width, hard);
+			DEV9_LOG("DEV9: SPD_R_0e %dbit read %x", width, hard);
 			return hard;
 		case SPD_R_XFR_CTRL:
-			DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL %dbit read %x", width, dev9.xfr_ctrl);
+			DEV9_LOG("DEV9: SPD_R_XFR_CTRL %dbit read %x", width, dev9.xfr_ctrl);
 			return dev9.xfr_ctrl;
 		case SPD_R_DBUF_STAT:
 		{
@@ -525,11 +525,11 @@ u16 SpeedRead(u32 addr, int width)
 				hard |= SPD_DBUF_STAT_FULL;
 			}
 
-			//DevCon.WriteLn("DEV9: SPD_R_DBUF_STAT %dbit read %x", width, hard);
+			//DEV9_LOG("DEV9: SPD_R_DBUF_STAT %dbit read %x", width, hard);
 			return hard;
 		}
 		case SPD_R_IF_CTRL:
-			//DevCon.WriteLn("DEV9: SPD_R_IF_CTRL %dbit read %x", width,, dev9.if_ctrl);
+			//DEV9_LOG("DEV9: SPD_R_IF_CTRL %dbit read %x", width,, dev9.if_ctrl);
 			return dev9.if_ctrl;
 		default:
 			hard = dev9Ru16(addr);
@@ -543,24 +543,24 @@ void SpeedWrite(u32 addr, u16 value, int width)
 	switch (addr)
 	{
 		case 0x10000020:
-			// DevCon.WriteLn("DEV9: SPD_R_20 %dbit write %x", wisth, value);
+			// DEV9_LOG("DEV9: SPD_R_20 %dbit write %x", wisth, value);
 			return;
 		case SPD_R_INTR_STAT:
 			Console.Error("DEV9: SPD_R_INTR_STAT %dbit write, WTF? %x", width, value);
 			dev9.irqcause = value;
 			return;
 		case SPD_R_INTR_MASK: // 8bit writes affect whole reg
-			//DevCon.WriteLn("DEV9: SPD_R_INTR_MASK %dbit write %x", checking for masked/unmasked interrupts", width, value);
+			//DEV9_LOG("DEV9: SPD_R_INTR_MASK %dbit write %x", checking for masked/unmasked interrupts", width, value);
 			if ((dev9.irqmask != value) && ((dev9.irqmask | value) & dev9.irqcause))
 			{
-				//DevCon.WriteLn("DEV9: SPD_R_INTR_MASK firing unmasked interrupts");
+				//DEV9_LOG("DEV9: SPD_R_INTR_MASK firing unmasked interrupts");
 				dev9Irq(1);
 			}
 			dev9.irqmask = value;
 			return;
 
 		case SPD_R_PIO_DIR:
-			DevCon.WriteLn("DEV9: SPD_R_PIO_DIR %dbit write %x", width, value);
+			DEV9_LOG("DEV9: SPD_R_PIO_DIR %dbit write %x", width, value);
 
 			if ((value & 0xc0) != 0xc0)
 				return;
@@ -573,7 +573,7 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			return;
 
 		case SPD_R_PIO_DATA:
-			//DevCon.WriteLn("DEV9: SPD_R_PIO_DATA %dbit write %x", width, value);
+			//DEV9_LOG("DEV9: SPD_R_PIO_DATA %dbit write %x", width, value);
 
 			if ((value & 0xc0) != 0xc0)
 				return;
@@ -627,23 +627,23 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			return;
 
 		case SPD_R_DMA_CTRL:
-			//DevCon.WriteLn("DEV9: SPD_R_IF_CTRL %dbit write %x", width, value);
+			//DEV9_LOG("DEV9: SPD_R_IF_CTRL %dbit write %x", width, value);
 			dev9.dma_ctrl = value;
 
 			//if (value & SPD_DMA_TO_SMAP)
-			//	DevCon.WriteLn("DEV9: SPD_R_DMA_CTRL DMA For SMAP");
+			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL DMA For SMAP");
 			//else
-			//	DevCon.WriteLn("DEV9: SPD_R_DMA_CTRL DMA For ATA");
+			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL DMA For ATA");
 
 			//if ((value & SPD_DMA_FASTEST) != 0)
-			//	DevCon.WriteLn("DEV9: SPD_R_DMA_CTRL Fastest DMA Mode");
+			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL Fastest DMA Mode");
 			//else
-			//	DevCon.WriteLn("DEV9: SPD_R_DMA_CTRL Slower DMA Mode");
+			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL Slower DMA Mode");
 
 			//if ((value & SPD_DMA_WIDE) != 0)
-			//	DevCon.WriteLn("DEV9: SPD_R_DMA_CTRL Wide(32bit) DMA Mode Set");
+			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL Wide(32bit) DMA Mode Set");
 			//else
-			//	DevCon.WriteLn("DEV9: SPD_R_DMA_CTRL 16bit DMA Mode");
+			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL 16bit DMA Mode");
 
 			if ((value & SPD_DMA_PAUSE) != 0)
 				Console.Error("DEV9: SPD_R_DMA_CTRL Pause DMA Not Implemented");
@@ -654,7 +654,7 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			break;
 		case SPD_R_XFR_CTRL:
 		{
-			//DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL %dbit write %x", width, value);
+			//DEV9_LOG("DEV9: SPD_R_XFR_CTRL %dbit write %x", width, value);
 			const u16 oldValue = dev9.xfr_ctrl;
 			dev9.xfr_ctrl = value;
 
@@ -662,23 +662,23 @@ void SpeedWrite(u32 addr, u16 value, int width)
 				DEV9runFIFO();
 
 			//if (value & SPD_XFR_WRITE)
-			//	DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL Set Write");
+			//	DEV9_LOG("DEV9: SPD_R_XFR_CTRL Set Write");
 			//else
-			//	DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL Set Read");
+			//	DEV9_LOG("DEV9: SPD_R_XFR_CTRL Set Read");
 
 			//if ((value & (1 << 1)) != 0)
-			//	DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL Unknown Bit 1");
+			//	DEV9_LOG("DEV9: SPD_R_XFR_CTRL Unknown Bit 1");
 
 			//if ((value & (1 << 2)) != 0)
-			//	DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL Unknown Bit 2");
+			//	DEV9_LOG("DEV9: SPD_R_XFR_CTRL Unknown Bit 2");
 
 			if (value & SPD_XFR_DMAEN)
 			{
-				//DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL For DMA Enabled");
+				//DEV9_LOG("DEV9: SPD_R_XFR_CTRL For DMA Enabled");
 				DEV9runFIFO();
 			}
 			//else
-			//	DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL For DMA Disabled");
+			//	DEV9_LOG("DEV9: SPD_R_XFR_CTRL For DMA Disabled");
 
 			if ((value & 0b1111111101111000) != 0)
 				Console.Error("DEV9: SPD_R_XFR_CTRL Unknown value written %x", value);
@@ -686,16 +686,16 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			break;
 		}
 		case SPD_R_DBUF_STAT:
-			//DevCon.WriteLn("DEV9: SPD_R_DBUF_STAT %dbit write %x", width, value);
+			//DEV9_LOG("DEV9: SPD_R_DBUF_STAT %dbit write %x", width, value);
 
 			if ((value & SPD_DBUF_RESET_READ_CNT) != 0)
 			{
-				//DevCon.WriteLn("DEV9: SPD_R_DBUF_STAT Reset read counter");
+				//DEV9_LOG("DEV9: SPD_R_DBUF_STAT Reset read counter");
 				dev9.fifo_bytes_read = 0;
 			}
 			if ((value & SPD_DBUF_RESET_WRITE_CNT) != 0)
 			{
-				//DevCon.WriteLn("DEV9: SPD_R_DBUF_STAT Reset write counter");
+				//DEV9_LOG("DEV9: SPD_R_DBUF_STAT Reset write counter");
 				dev9.fifo_bytes_write = 0;
 			}
 
@@ -708,30 +708,30 @@ void SpeedWrite(u32 addr, u16 value, int width)
 
 		case SPD_R_IF_CTRL:
 		{
-			//DevCon.WriteLn("DEV9: SPD_R_IF_CTRL %dbit write %x", width, value);
+			//DEV9_LOG("DEV9: SPD_R_IF_CTRL %dbit write %x", width, value);
 			const u16 oldValue = dev9.if_ctrl;
 			dev9.if_ctrl = value;
 
 			//if (value & SPD_IF_UDMA)
-			//	DevCon.WriteLn("DEV9: IF_CTRL UDMA Enabled");
+			//	DEV9_LOG("DEV9: IF_CTRL UDMA Enabled");
 			//else
-			//	DevCon.WriteLn("DEV9: IF_CTRL UDMA Disabled");
+			//	DEV9_LOG("DEV9: IF_CTRL UDMA Disabled");
 
 			if ((value & SPD_IF_READ) != (oldValue & SPD_IF_READ))
 				DEV9runFIFO();
 
 			//if (value & SPD_IF_READ)
-			//	DevCon.WriteLn("DEV9: IF_CTRL DMA Is ATA Read");
+			//	DEV9_LOG("DEV9: IF_CTRL DMA Is ATA Read");
 			//else
-			//	DevCon.WriteLn("DEV9: IF_CTRL DMA Is ATA Write");
+			//	DEV9_LOG("DEV9: IF_CTRL DMA Is ATA Write");
 
 			if (value & SPD_IF_ATA_DMAEN)
 			{
-				//DevCon.WriteLn("DEV9: IF_CTRL ATA DMA Enabled");
+				//DEV9_LOG("DEV9: IF_CTRL ATA DMA Enabled");
 				DEV9runFIFO();
 			}
 			//else
-			//	DevCon.WriteLn("DEV9: IF_CTRL ATA DMA Disabled");
+			//	DEV9_LOG("DEV9: IF_CTRL ATA DMA Disabled");
 
 			/* During a HDD DMA transfer, the ATA regs are inacessable.
 			 * The SPEED will cache register writes and wait until the end of the DMA block to write them.
@@ -741,9 +741,9 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			 * Our DMA transfers are instant, so we can ignore this bit.
 			 */
 			//if (value & (1 << 3))
-			//	DevCon.WriteLn("DEV9: IF_CTRL Wait for ATA register read Enabled");
+			//	DEV9_LOG("DEV9: IF_CTRL Wait for ATA register read Enabled");
 			//else
-			//	DevCon.WriteLn("DEV9: IF_CTRL Wait for ATA register read Disabled");
+			//	DEV9_LOG("DEV9: IF_CTRL Wait for ATA register read Disabled");
 
 			if (value & (1 << 4))
 				Console.Error("DEV9: IF_CTRL Unknown Bit 4 Set");
@@ -752,12 +752,12 @@ void SpeedWrite(u32 addr, u16 value, int width)
 
 			if ((value & SPD_IF_HDD_RESET) == 0) //Maybe?
 			{
-				//DevCon.WriteLn("DEV9: IF_CTRL HDD Hard Reset");
+				//DEV9_LOG("DEV9: IF_CTRL HDD Hard Reset");
 				dev9.ata->ATA_HardReset();
 			}
 			if ((value & SPD_IF_ATA_RESET) != 0)
 			{
-				DevCon.WriteLn("DEV9: IF_CTRL ATA Reset");
+				DEV9_LOG("DEV9: IF_CTRL ATA Reset");
 				//0x62        0x0020
 				dev9.if_ctrl = 0x001A;
 				//0x66        0x0001
@@ -773,25 +773,25 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			break;
 		}
 		case SPD_R_PIO_MODE: //ATA only? or includes EEPROM?
-			//DevCon.WriteLn("DEV9: SPD_R_PIO_MODE 16bit %dbit write %x", width, value);
+			//DEV9_LOG("DEV9: SPD_R_PIO_MODE 16bit %dbit write %x", width, value);
 			dev9.pio_mode = value;
 
 			switch (value)
 			{
 				case 0x92:
-					//DevCon.WriteLn("DEV9: SPD_R_PIO_MODE 0");
+					//DEV9_LOG("DEV9: SPD_R_PIO_MODE 0");
 					break;
 				case 0x72:
-					//DevCon.WriteLn("DEV9: SPD_R_PIO_MODE 1");
+					//DEV9_LOG("DEV9: SPD_R_PIO_MODE 1");
 					break;
 				case 0x32:
-					//DevCon.WriteLn("DEV9: SPD_R_PIO_MODE 2");
+					//DEV9_LOG("DEV9: SPD_R_PIO_MODE 2");
 					break;
 				case 0x24:
-					//DevCon.WriteLn("DEV9: SPD_R_PIO_MODE 3");
+					//DEV9_LOG("DEV9: SPD_R_PIO_MODE 3");
 					break;
 				case 0x23:
-					//DevCon.WriteLn("DEV9: SPD_R_PIO_MODE 4");
+					//DEV9_LOG("DEV9: SPD_R_PIO_MODE 4");
 					break;
 
 				default:
@@ -800,19 +800,19 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			}
 			break;
 		case SPD_R_MDMA_MODE:
-			DevCon.WriteLn("DEV9: SPD_R_MDMA_MODE 16bit write %dbit write %x", width, value);
+			DEV9_LOG("DEV9: SPD_R_MDMA_MODE 16bit write %dbit write %x", width, value);
 			dev9.mdma_mode = value;
 
 			switch (value)
 			{
 				case 0xFF:
-					DevCon.WriteLn("DEV9: SPD_R_MDMA_MODE 0");
+					DEV9_LOG("DEV9: SPD_R_MDMA_MODE 0");
 					break;
 				case 0x45:
-					DevCon.WriteLn("DEV9: SPD_R_MDMA_MODE 1");
+					DEV9_LOG("DEV9: SPD_R_MDMA_MODE 1");
 					break;
 				case 0x24:
-					DevCon.WriteLn("DEV9: SPD_R_MDMA_MODE 2");
+					DEV9_LOG("DEV9: SPD_R_MDMA_MODE 2");
 					break;
 				default:
 					Console.Error("DEV9: SPD_R_MDMA_MODE UNKNOWN MODE %x", value);
@@ -821,25 +821,25 @@ void SpeedWrite(u32 addr, u16 value, int width)
 
 			break;
 		case SPD_R_UDMA_MODE:
-			DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 16bit write %dbit write %x", width, value);
+			DEV9_LOG("DEV9: SPD_R_UDMA_MODE 16bit write %dbit write %x", width, value);
 			dev9.udma_mode = value;
 
 			switch (value)
 			{
 				case 0xa7:
-					DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 0");
+					DEV9_LOG("DEV9: SPD_R_UDMA_MODE 0");
 					break;
 				case 0x85:
-					DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 1");
+					DEV9_LOG("DEV9: SPD_R_UDMA_MODE 1");
 					break;
 				case 0x63:
-					DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 2");
+					DEV9_LOG("DEV9: SPD_R_UDMA_MODE 2");
 					break;
 				case 0x62:
-					DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 3");
+					DEV9_LOG("DEV9: SPD_R_UDMA_MODE 3");
 					break;
 				case 0x61:
-					DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 4");
+					DEV9_LOG("DEV9: SPD_R_UDMA_MODE 4");
 					break;
 				default:
 					Console.Error("DEV9: SPD_R_UDMA_MODE UNKNOWN MODE %x", value);
@@ -884,7 +884,7 @@ u8 DEV9read8(u32 addr)
 	{
 		case DEV9_R_REV:
 			hard = 0x32; // expansion bay
-			//DevCon.WriteLn("DEV9: DEV9_R_REV 8bit read %x", hard);
+			//DEV9_LOG("DEV9: DEV9_R_REV 8bit read %x", hard);
 			return hard;
 
 		default:
@@ -924,7 +924,7 @@ u16 DEV9read16(u32 addr)
 	{
 		case DEV9_R_REV:
 			//hard = 0x0030; // expansion bay
-			//DevCon.WriteLn("DEV9: DEV9_R_REV 16bit read %x", dev9.irqmask);
+			//DEV9_LOG("DEV9: DEV9_R_REV 16bit read %x", dev9.irqmask);
 			hard = 0x0032;
 			return hard;
 
@@ -1070,7 +1070,7 @@ void DEV9readDMA8Mem(u32* pMem, int size)
 
 	size >>= 1;
 
-	DevCon.WriteLn("DEV9: *DEV9readDMA8Mem: size %x", size);
+	DEV9_LOG("DEV9: *DEV9readDMA8Mem: size %x", size);
 
 	if (dev9.dma_ctrl & SPD_DMA_TO_SMAP)
 	{
@@ -1100,7 +1100,7 @@ void DEV9writeDMA8Mem(u32* pMem, int size)
 
 	size >>= 1;
 
-	DevCon.WriteLn("DEV9: *DEV9writeDMA8Mem: size %x", size);
+	DEV9_LOG("DEV9: *DEV9writeDMA8Mem: size %x", size);
 
 	if (dev9.dma_ctrl & SPD_DMA_TO_SMAP)
 	{

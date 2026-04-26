@@ -183,6 +183,9 @@ struct TraceLogPack
 		TraceLog Counters;
 		TraceLog CDVD;
 		TraceLog MDEC;
+		TraceLog DEV9;
+		TraceLog HDD;
+		TraceLog XFROM;
 
 		IOP_PACK();
 	} IOP;
@@ -254,6 +257,9 @@ extern ConsoleLogPack ConsoleLogging;
 #define GPU_LOG			macTrace(IOP.GPU)
 #define CDVD_LOG		macTrace(IOP.CDVD)
 #define MDEC_LOG		macTrace(IOP.MDEC)
+#define DEV9_LOG		macTrace(IOP.DEV9)
+#define HDD_LOG			macTrace(IOP.HDD)
+#define XFROM_LOG		macTrace(IOP.XFROM)
 
 
 #define ELF_LOG         ConsoleLogging.ELF.IsActive()              && ConsoleLogging.ELF.Write
