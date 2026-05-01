@@ -1034,6 +1034,34 @@ namespace usb_msd
 			case ClassInterfaceOutRequest:
 				switch (data[0])
 				{
+					case TEST_UNIT_READY:
+						break;
+					case START_STOP:
+						Console.Warning("usb-msd: START_STOP : length=%d, start=%d, eject=%d",
+							length,
+							!!(data[4] & 1),
+							!!(data[4] & 2)
+						);
+						break;
+					case SEND_DIAGNOSTIC:
+						Console.Warning("usb-msd: SEND_DIAGNOSTIC : length=%d, unitOfl=%d, defOfl=%d, selfTest=%d",
+							length,
+							!!(data[1] & 1),
+							!!(data[1] & 2),
+							!!(data[1] & 4)
+						);
+						break;
+					case MODE_SENSE_10:
+						Console.Warning("usb-msd: MODE_SENSE_10 : length=%d, pc=%d, page=%d, len=0x%x",
+							length,
+							(data[2] >> 6), (data[2] & 0x3f),
+							(data[7] << 8) | data[8]
+						);
+						s->f.mode = USB_MSDM_CBW;
+						s->f.data_len = 0x08;
+						memset(s->f.buf, 0, s->f.data_len);
+						s->f.buf[1] = 0x06;
+						break;
 					case REQUEST_SENSE:
 					{
 						s->f.mode = USB_MSDM_CBW;
