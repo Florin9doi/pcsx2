@@ -3431,8 +3431,25 @@ static void cdvdWrite16(u8 rt) // SCOMMAND
 				cdvd.SCMDResultBuff[0] = 0;
 				break;
 
-				//		case 0x2C: //sceCdXBSPowerCtl (2:2)
-				//			break;
+			case 0x2a: // set psx remote control mode (1:1)
+				Console.Warning("set remote control mode, param=%x", cdvd.SCMDParamBuff[0]);
+				SetSCMDResultSize(1);
+				cdvd.SCMDResultBuff[0] = 0x00;
+				break;
+
+			case 0x2b: // get psx remote control mode (0:2)
+				SetSCMDResultSize(2);
+				cdvd.SCMDResultBuff[0] = 0x00;
+				cdvd.SCMDResultBuff[1] = 0x02;
+				Console.Warning("  get remote control mode, param=%x", cdvd.SCMDResultBuff[1]);
+				break;
+
+			case 0x2C: //sceCdXBSPowerCtl (2:2)
+				Console.Warning("sceCdXBSPowerCtl, cnt=%d, bs=%x, ext_pwr=%x", cdvd.SCMDParamCnt, cdvd.SCMDParamBuff[0], cdvd.SCMDParamBuff[1]);
+				SetSCMDResultSize(2);
+				cdvd.SCMDResultBuff[0] = 0x00;
+				cdvd.SCMDResultBuff[1] = cdvd.SCMDParamBuff[1]; // get ext_pwr
+				break;
 
 				//		case 0x2D: //sceCdXLEDCtl (2:2)
 				//			break;

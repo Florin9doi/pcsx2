@@ -24,6 +24,43 @@
 #define IOP_SEEK_CUR 1
 #define IOP_SEEK_END 2
 
+typedef struct
+{
+	u32 mode;
+	u32 attr;
+	u32 size;
+	u8 ctime[8];
+	u8 atime[8];
+	u8 mtime[8];
+	u32 hisize;
+} fio_stat_t;
+typedef struct
+{
+	fio_stat_t _fioStat;
+	/** Number of subs (main) / subpart number (sub) */
+	u32 private_0;
+	u32 private_1;
+	u32 private_2;
+	u32 private_3;
+	u32 private_4;
+	/** Sector start.  */
+	u32 private_5;
+} fxio_stat_t;
+
+typedef struct
+{
+	fio_stat_t stat;
+	char name[256];
+	u32 unknown;
+} fio_dirent_t;
+
+typedef struct
+{
+	fxio_stat_t stat;
+	char name[256];
+	u32 unknown;
+} fxio_dirent_t;
+
 class IOManFile
 {
 public:
@@ -51,7 +88,7 @@ public:
 
 	virtual void close() = 0;
 
-	virtual int read(void* buf, bool iomanX = false) { return -IOP_EIO; } /* Flawfinder: ignore */
+	virtual int read(void* buf, bool iomanX = false, bool realfile = false) { return -IOP_EIO; } /* Flawfinder: ignore */
 };
 
 typedef int (*irxHLE)(); // return 1 if handled, otherwise 0
@@ -68,11 +105,18 @@ namespace R3000A
 	void irxImportLog_rec(u32 import_table, u16 index, const char* funcname);
 	int irxImportExec(u32 import_table, u16 index);
 
+	int host_stat(const std::string& path, fxio_stat_t* host_stats, bool realfile);
+	int hostdir_open(IOManDir** outDir, const std::string& path);
+	int hostfile_open(IOManFile** file, const std::string& path, s32 flags, u16 mode);
+
 	namespace ioman
 	{
 		void reset();
 		bool is_host(const std::string_view path);
 		std::string host_path(const std::string_view path, bool allow_open_host_root);
+		template <typename T> int allocfd(T* obj);
+		template <typename T> T* getfd(int fd);
+		void freefd(int fd);
 	}
 } // namespace R3000A
 

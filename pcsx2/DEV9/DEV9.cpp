@@ -24,11 +24,13 @@
 #include <stdarg.h>
 #include "DEV9.h"
 #include "Config.h"
+#include "dvrp.h"
 #include "smap.h"
 
 #ifdef _WIN32
 #pragma warning(disable : 4244)
 #endif
+#include <future>
 
 dev9Struct dev9;
 
@@ -450,6 +452,10 @@ u16 SpeedRead(u32 addr, int width)
 			//DEV9_LOG("DEV9: SPD_R_INTR_MASK %dbit read %x", width, dev9.irqmask);
 			return dev9.irqmask;
 
+		case SPD_R_PIO_DIR:
+			DEV9_LOG("DEV9: SPD_R_PIO_DIR %dbit read %x", width, dev9Ru8(addr));
+			return dev9Ru8(addr);
+
 		case SPD_R_PIO_DATA:
 
 			/*if(dev9.eeprom_dir!=1)
@@ -561,6 +567,7 @@ void SpeedWrite(u32 addr, u16 value, int width)
 
 		case SPD_R_PIO_DIR:
 			DEV9_LOG("DEV9: SPD_R_PIO_DIR %dbit write %x", width, value);
+			dev9Ru8(addr) = value;
 
 			if ((value & 0xc0) != 0xc0)
 				return;
@@ -645,8 +652,8 @@ void SpeedWrite(u32 addr, u16 value, int width)
 			//else
 			//	DEV9_LOG("DEV9: SPD_R_DMA_CTRL 16bit DMA Mode");
 
-			if ((value & SPD_DMA_PAUSE) != 0)
-				Console.Error("DEV9: SPD_R_DMA_CTRL Pause DMA Not Implemented");
+			//if ((value & SPD_DMA_PAUSE) != 0)
+				//Console.Error("DEV9: SPD_R_DMA_CTRL Pause DMA Not Implemented");
 
 			if ((value & 0b1111111111101000) != 0)
 				Console.Error("DEV9: SPD_R_DMA_CTRL Unknown value written %x", value);
@@ -869,10 +876,14 @@ u8 DEV9read8(u32 addr)
 		// speed
 		return SpeedRead(addr, 8);
 	}
-	if (addr >= SMAP_REGBASE && addr < FLASH_REGBASE)
+	if (addr >= SMAP_REGBASE && addr < DVRP_REGBASE)
 	{
 		// smap
 		return smap_read8(addr);
+	}
+	if (addr >= DVRP_REGBASE && addr < FLASH_REGBASE)
+	{
+		return dvrp_read(addr, 8);
 	}
 	if ((addr >= FLASH_REGBASE) && (addr < (FLASH_REGBASE + FLASH_REGSIZE)))
 	{
@@ -909,10 +920,14 @@ u16 DEV9read16(u32 addr)
 		// speed
 		return SpeedRead(addr, 16);
 	}
-	if (addr >= SMAP_REGBASE && addr < FLASH_REGBASE)
+	if (addr >= SMAP_REGBASE && addr < DVRP_REGBASE)
 	{
 		// smap
 		return smap_read16(addr);
+	}
+	if (addr >= DVRP_REGBASE && addr < FLASH_REGBASE)
+	{
+		return dvrp_read(addr, 16);
 	}
 	if ((addr >= FLASH_REGBASE) && (addr < (FLASH_REGBASE + FLASH_REGSIZE)))
 	{
@@ -977,10 +992,15 @@ void DEV9write8(u32 addr, u8 value)
 		SpeedWrite(addr, value, 8);
 		return;
 	}
-	if (addr >= SMAP_REGBASE && addr < FLASH_REGBASE)
+	if (addr >= SMAP_REGBASE && addr < DVRP_REGBASE)
 	{
 		// smap
 		smap_write8(addr, value);
+		return;
+	}
+	if (addr >= DVRP_REGBASE && addr < FLASH_REGBASE)
+	{
+		dvrp_write(addr, value, 8);
 		return;
 	}
 	if ((addr >= FLASH_REGBASE) && (addr < (FLASH_REGBASE + FLASH_REGSIZE)))
@@ -1010,10 +1030,15 @@ void DEV9write16(u32 addr, u16 value)
 		SpeedWrite(addr, value, 16);
 		return;
 	}
-	if (addr >= SMAP_REGBASE && addr < FLASH_REGBASE)
+	if (addr >= SMAP_REGBASE && addr < DVRP_REGBASE)
 	{
 		// smap
 		smap_write16(addr, value);
+		return;
+	}
+	if (addr >= DVRP_REGBASE && addr < FLASH_REGBASE)
+	{
+		dvrp_write(addr, value, 16);
 		return;
 	}
 	if ((addr >= FLASH_REGBASE) && (addr < (FLASH_REGBASE + FLASH_REGSIZE)))
@@ -1077,6 +1102,11 @@ void DEV9readDMA8Mem(u32* pMem, int size)
 		smap_readDMA8Mem(pMem, size);
 		psxDMA8Interrupt();
 	}
+	else if (dev9.dma_ctrl & SPD_DMA_TO_DVRP)
+	{
+		dvrp_readDMA8Mem(pMem, size);
+		psxDMA8Interrupt();
+	}
 	else
 	{
 		if (!(dev9.xfr_ctrl & SPD_XFR_WRITE))
@@ -1105,6 +1135,11 @@ void DEV9writeDMA8Mem(u32* pMem, int size)
 	if (dev9.dma_ctrl & SPD_DMA_TO_SMAP)
 	{
 		smap_writeDMA8Mem(pMem, size);
+		psxDMA8Interrupt();
+	}
+	else if (dev9.dma_ctrl & SPD_DMA_TO_DVRP)
+	{
+		dvrp_writeDMA8Mem(pMem, size);
 		psxDMA8Interrupt();
 	}
 	else

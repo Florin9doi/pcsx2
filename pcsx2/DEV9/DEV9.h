@@ -131,6 +131,7 @@ extern int ThreadRun;
 #define		SPD_DMA_FASTEST		(1 << 1)
 #define		SPD_DMA_WIDE		(1 << 2)
 #define		SPD_DMA_PAUSE		(1 << 4) //Pause SPEED->IOP DMA, by keeping DREQ inactive
+#define		SPD_DMA_TO_DVRP		(1 << 4)
 #define SPD_R_INTR_STAT			(SPD_REGBASE + 0x28)
 #define SPD_R_INTR_MASK			(SPD_REGBASE + 0x2a)
 
@@ -590,6 +591,37 @@ typedef struct _smap_bd {
 #define ATA_STAT_WRERR	0x20
 #define ATA_STAT_READY	0x40
 #define ATA_STAT_BUSY	0x80
+
+
+#define DVRP_INTR_INTRQ  (1 << 9)
+#define DVRP_REGBASE     (SPD_REGBASE  + 0x4000)
+#define DVRP_DMA_DIR     (DVRP_REGBASE + 0x04)
+#define DVRP_RESET       (DVRP_REGBASE + 0x08)
+
+#define DVRP_DMA_SYNC    (DVRP_REGBASE + 0x0100)
+#define DVRP_DMA_SIZE    (DVRP_DMA_SYNC + 0x08)
+#define DVRP_DMA_WIDTH   (DVRP_DMA_SYNC + 0x0c)
+#define DVRP_DMA_DATA    (DVRP_DMA_SYNC + 0x20)
+#define DVRP_DMA_DATA2   (DVRP_DMA_SYNC + 0x22)
+
+#define DVRP_INTR_STAT   (DVRP_REGBASE + 0x0200)
+#define	  DVRP_CMD_ACK      (1 << 1)
+#define	  DVRP_CMD_COMPL    (1 << 2)
+#define	  DVRP_DMA_ACK      (1 << 3)
+#define	  DVRP_DMA_COMPL    (1 << 4)
+#define DVRP_INTR_ACK    (DVRP_INTR_STAT + 0x04)
+#define DVRP_INTR_MASK   (DVRP_INTR_STAT + 0x08)
+#define DVRP_CMD         (DVRP_INTR_STAT + 0x10)
+#define DVRP_ARG         (DVRP_INTR_STAT + 0x14)
+#define DVRP_ERR         (DVRP_INTR_STAT + 0x18)
+#define DVRP_INTR_CAUSE  (DVRP_INTR_STAT + 0x20)
+#define DVRP_RET_DATA    (DVRP_INTR_STAT + 0x24)
+#define DVRP_RET_COUNT   (DVRP_INTR_STAT + 0x28)
+#define DVRP_STAT        (DVRP_INTR_STAT + 0x30)
+#define DVRP_34          (DVRP_INTR_STAT + 0x34)
+#define DVRP_38          (DVRP_INTR_STAT + 0x38)
+#define DVRP_3c          (DVRP_INTR_STAT + 0x3c)
+
 
 /*
  * NAND Flash via Dev9 driver definitions

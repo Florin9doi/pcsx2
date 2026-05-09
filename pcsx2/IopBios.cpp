@@ -19,8 +19,6 @@
 
 #include <cctype>
 #include <cstring>
-#include <fmt/format.h>
-#include <sys/stat.h>
 #include <algorithm>
 
 #include <fcntl.h>
@@ -41,43 +39,6 @@
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-
-typedef struct
-{
-	u32 mode;
-	u32 attr;
-	u32 size;
-	u8 ctime[8];
-	u8 atime[8];
-	u8 mtime[8];
-	u32 hisize;
-} fio_stat_t;
-typedef struct
-{
-	fio_stat_t _fioStat;
-	/** Number of subs (main) / subpart number (sub) */
-	u32 private_0;
-	u32 private_1;
-	u32 private_2;
-	u32 private_3;
-	u32 private_4;
-	/** Sector start.  */
-	u32 private_5;
-} fxio_stat_t;
-
-typedef struct
-{
-	fio_stat_t stat;
-	char name[256];
-	u32 unknown;
-} fio_dirent_t;
-
-typedef struct
-{
-	fxio_stat_t stat;
-	char name[256];
-	u32 unknown;
-} fxio_dirent_t;
 
 static std::string hostRoot;
 
@@ -163,10 +124,10 @@ namespace R3000A
 #endif
 	}
 
-	static int host_stat(const std::string& path, fio_stat_t* host_stats, fio_stat_flags& stat = ioman_stat)
+	int host_stat(const std::string& path, fio_stat_t* host_stats, fio_stat_flags& stat = ioman_stat, bool realfile = false)
 	{
 		struct stat file_stats;
-		const std::string file_path(ioman::host_path(path, true));
+		const std::string file_path(realfile ? path : ioman::host_path(path, true));
 
 		if (!FileSystem::StatFile(file_path.c_str(), &file_stats))
 			return -IOP_ENOENT;
@@ -222,9 +183,9 @@ namespace R3000A
 		return 0;
 	}
 
-	static int host_stat(const std::string& path, fxio_stat_t* host_stats)
+	int host_stat(const std::string& path, fxio_stat_t* host_stats, bool realfile = false)
 	{
-		return host_stat(path, &host_stats->_fioStat, iomanx_stat);
+		return host_stat(path, &host_stats->_fioStat, iomanx_stat, realfile);
 	}
 
 	// TODO: sandbox option, other permissions
@@ -259,10 +220,10 @@ namespace R3000A
 			}
 		}
 
-		static int open(IOManFile** file, const std::string& full_path, s32 flags, u16 mode)
+		static int open(IOManFile** file, const std::string& full_path, s32 flags, u16 mode, bool realfile = false)
 		{
 			const std::string path(full_path.substr(full_path.find(':') + 1));
-			const std::string file_path(ioman::host_path(path, false));
+			const std::string file_path(realfile ? full_path : ioman::host_path(path, false));
 			int native_flags = O_BINARY; // necessary in Windows.
 
 			switch (flags & IOP_O_RDWR)
@@ -357,10 +318,10 @@ namespace R3000A
 
 		virtual ~HostDir() = default;
 
-		static int open(IOManDir** dir, const std::string& full_path)
+		static int open(IOManDir** dir, const std::string& full_path, bool realfile = false)
 		{
 			std::string relativePath = full_path.substr(full_path.find(':') + 1);
-			std::string path = ioman::host_path(relativePath, true);
+			std::string path = realfile ? full_path : ioman::host_path(relativePath, true);
 
 			if (!FileSystem::DirectoryExists(path.c_str()))
 				return -IOP_ENOENT; // Should return ENOTDIR if path is a file?
@@ -375,7 +336,7 @@ namespace R3000A
 			return 0;
 		}
 
-		virtual int read(void* buf, bool iomanX) /* Flawfinder: ignore */
+		virtual int read(void* buf, bool iomanX, bool realfile = false) /* Flawfinder: ignore */
 		{
 			if (dir == results.end())
 				return 0;
@@ -384,13 +345,15 @@ namespace R3000A
 			{
 				fxio_dirent_t* hostcontent = (fxio_dirent_t*)buf;
 				StringUtil::Strlcpy(hostcontent->name, dir->FileName, sizeof(hostcontent->name));
-				host_stat(ioman::host_path(Path::Combine(basedir, dir->FileName), true), &hostcontent->stat);
+				std::string path = Path::Combine(basedir, dir->FileName);
+				host_stat(realfile ? path : ioman::host_path(path, true), &hostcontent->stat, realfile);
 			}
 			else
 			{
 				fio_dirent_t* hostcontent = (fio_dirent_t*)buf;
 				StringUtil::Strlcpy(hostcontent->name, dir->FileName, sizeof(hostcontent->name));
-				host_stat(ioman::host_path(Path::Combine(basedir, dir->FileName), true), &hostcontent->stat);
+				std::string path = Path::Combine(basedir, dir->FileName);
+				host_stat(realfile ? path : ioman::host_path(path, true), &hostcontent->stat, ioman_stat, realfile);
 			}
 
 			dir = std::next(dir);
@@ -412,6 +375,13 @@ namespace R3000A
 	};
 
 	std::vector<fileHandle> handles;
+	
+	int hostdir_open(IOManDir** outDir, const std::string& path) {
+		return HostDir::open(outDir, path, true);
+	}
+	int hostfile_open(IOManFile** file, const std::string& path, s32 flags, u16 mode) {
+		return HostFile::open(file, path, flags, mode, true);
+	}
 
 	namespace ioman
 	{
@@ -515,6 +485,18 @@ namespace R3000A
 
 			if (fd < 0 || fd >= maxfds)
 				return;
+			
+			if (fds[fd].type == 1)
+			{
+				for (size_t i = 0; i < handles.size(); i++)
+				{
+					if (handles[i].fd_index == (u32)fd - firstfd)
+					{
+						handles.erase(handles.begin() + i);
+						break;
+					}
+				}
+			}
 
 			fds[fd].close();
 		}

@@ -35,6 +35,7 @@ void ATA::CreateHDDinfo(u64 sizeSectors)
 	//PS2 is limited to 48bit size HDD (2TB), however,
 	//we don't yet support 48bit, so limit to 28bit size
 	u64 maxSize = (1 << 28) - 1; // 128Gb
+	maxSize = 40'000'000'000 / 512;
 	const u32 nbSectors = std::min<u32>(sizeSectors, maxSize); // nbSectors will hold 28-bit size
 	if (lba48Supported)
 		maxSize = (1ULL << 48) - 1; // 128PiB
