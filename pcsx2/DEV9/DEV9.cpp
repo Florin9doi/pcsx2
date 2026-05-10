@@ -1160,6 +1160,7 @@ void DEV9async(u32 cycles)
 {
 	smap_async(cycles);
 	dev9.ata->Async(cycles);
+	dvrp_async(cycles);
 }
 
 void DEV9CheckChanges(const Pcsx2Config& old_config)

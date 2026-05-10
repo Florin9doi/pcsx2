@@ -19,16 +19,21 @@ void dvrp_write(u32 addr, u16 value, int width);
 
 void dvrp_readDMA8Mem(u32* pMem, const int size);
 void dvrp_writeDMA8Mem(u32* pMem, const int size);
+void dvrp_async(u32 cycles);
+
 void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size);
 
 typedef struct
 {
+	u64 cycles;
+
 	u8 cmd_in_idx;
 	u16 cmd_in_data[10];
 	u8 cmd_out_idx;
 	u16 cmd_out_data[10];
 	u16 dma_cmd;
 	u16 busy_cmd;
+	u64 target_cycle;
 
 	u32 dma_out_size;
 	u8 dma_out[0x4000];

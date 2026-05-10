@@ -3445,7 +3445,7 @@ static void cdvdWrite16(u8 rt) // SCOMMAND
 				break;
 
 			case 0x2C: //sceCdXBSPowerCtl (2:2)
-				Console.Warning("sceCdXBSPowerCtl, cnt=%d, bs=%x, ext_pwr=%x", cdvd.SCMDParamCnt, cdvd.SCMDParamBuff[0], cdvd.SCMDParamBuff[1]);
+				Console.Warning("sceCdXBSPowerCtl, cnt=%d, r/w=%x, ext_pwr=%x", cdvd.SCMDParamCnt, cdvd.SCMDParamBuff[0], cdvd.SCMDParamBuff[1]);
 				SetSCMDResultSize(2);
 				cdvd.SCMDResultBuff[0] = 0x00;
 				cdvd.SCMDResultBuff[1] = cdvd.SCMDParamBuff[1]; // get ext_pwr

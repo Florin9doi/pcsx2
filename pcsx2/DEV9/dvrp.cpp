@@ -17,12 +17,14 @@ std::string get_dvrp_name(const u16 id) {
     return "Unknown";
 }
 static std::unordered_map<u16, const char*> av_presets = {
-	{0x01, "ext_video_in"},
+	{0x01, "ext_video_in1"},
+	{0x02, "ext_video_in2"},
 	{0x10, "auto_stereo_reception"},
 	{0x11, "mute"},
 	{0x12, "recorded_nr"},
 	{0x13, "bilingual_recording"},
 	{0x15, "ext_audio_in"},
+	{0x27, "dv_audio_in"},
 };
 const char* get_preset_name(const u16 id) {
     auto const it = av_presets.find(id);
@@ -58,15 +60,19 @@ void dvrp_submit_resp(u16 cmd, u16 stat)
 	_DEV9irq(DVRP_INTR_INTRQ, 1);
 }
 
+void dvrp_async(u32 cycles) {
+	dvrp.cycles += cycles;
+	if (dvrp.busy_cmd && dvrp.cycles >= dvrp.target_cycle)
+	{
+		dvrp_handle_func(dvrp.busy_cmd, 2, nullptr, 0);
+		dvrp.busy_cmd = 0;
+	}
+}
+
 void dvrp_shedule_cmd_comp(const u16 cmd)
 {
 	dvrp.busy_cmd = cmd;
-	std::jthread t([cmd] { // <<-- TODO: fix this
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		dvrp_handle_func(cmd, 2, nullptr, 0);
-		dvrp.busy_cmd = 0;
-	});
-	t.detach();
+	dvrp.target_cycle = dvrp.cycles + 500;
 }
 
 std::string dvrp_get_host_path(char* path) {
@@ -538,6 +544,7 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 			
 		case STEP3_COMP + dvrf_read:
 			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMP=%x(%s)    : fd=%x, size=%d, ret=%d", cmd, get_dvrp_name(cmd).c_str(), dvrp.file_fd, dvrp.read_size, dvrp.ret_val);
+			dvrp.ret_val = 0; // TODO: <<-- fix this
 			dvrp_set_resp_count_val(3, dvrp.ret_val);
 			dvrp_submit_resp(cmd_base, DVRP_CMD_COMPL);
 			break;
