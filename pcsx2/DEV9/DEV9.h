@@ -618,7 +618,12 @@ typedef struct _smap_bd {
 #define DVRP_RET_DATA    (DVRP_INTR_STAT + 0x24)
 #define DVRP_RET_COUNT   (DVRP_INTR_STAT + 0x28)
 #define DVRP_STAT        (DVRP_INTR_STAT + 0x30)
-#define DVRP_34          (DVRP_INTR_STAT + 0x34)
+#define DVRP_DVR_STAT    (DVRP_INTR_STAT + 0x34)
+#define	  DVRP_DVR_OK                   (1 << 0)
+#define	  DVRP_DVR_REC_PAUSED           (1 << 1)
+#define	  DVRP_DVR_REC_ACTV             (1 << 2)
+#define	  DVRP_DVR_REC_UNAVL            (1 << 3)
+#define	  DVRP_DVR_REC_ACTV_PAUSE_UNAVL (1 << 4)
 #define DVRP_38          (DVRP_INTR_STAT + 0x38)
 #define DVRP_3c          (DVRP_INTR_STAT + 0x3c)
 
