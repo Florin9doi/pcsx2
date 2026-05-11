@@ -3451,8 +3451,12 @@ static void cdvdWrite16(u8 rt) // SCOMMAND
 				cdvd.SCMDResultBuff[1] = cdvd.SCMDParamBuff[1]; // get ext_pwr
 				break;
 
-				//		case 0x2D: //sceCdXLEDCtl (2:2)
-				//			break;
+			case 0x2D: //sceCdXLEDCtl (2:2)
+				Console.Warning("sceCdXLEDCtl, cnt=%d, arg1=%x, arg2=%x", cdvd.SCMDParamCnt, cdvd.SCMDParamBuff[0], cdvd.SCMDParamBuff[1]);
+				SetSCMDResultSize(2);
+				cdvd.SCMDResultBuff[0] = 0x00;
+				cdvd.SCMDResultBuff[1] = 0x02;
+				break;
 
 				//		case 0x2E: //sceCdBuzzerCtl (0:1)
 				//			break;
@@ -3509,6 +3513,16 @@ static void cdvdWrite16(u8 rt) // SCOMMAND
 			case 0x38: //used to fix the MAC back after accidentally trashed it :D [sceCdWriteMAC - made up name] (8:1)
 				SetSCMDResultSize(1);
 				cdvdWriteMAC(&cdvd.SCMDParamBuff[0]);
+				break;
+
+			case 0x39: // (1:?)
+				Console.Warning("  dvd SCMD=%02x, cnt=%d, param=%x", rt, cdvd.SCMDParamCnt, cdvd.SCMDParamBuff[0]);
+				SetSCMDResultSize(1);
+				break;
+
+			case 0x3c: // (2:?)
+				Console.Warning("  dvd SCMD=%02x, cnt=%d, param=%x/%x", rt, cdvd.SCMDParamCnt, cdvd.SCMDParamBuff[0], cdvd.SCMDParamBuff[1]);
+				SetSCMDResultSize(1);
 				break;
 
 			case 0x3E: //[__sceCdWriteRegionParams - made up name] (15:1) [Florin: hum, i was expecting 14:1]

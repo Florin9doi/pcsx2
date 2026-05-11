@@ -72,7 +72,7 @@ void dvrp_async(u32 cycles) {
 void dvrp_shedule_cmd_comp(const u16 cmd)
 {
 	dvrp.busy_cmd = cmd;
-	dvrp.target_cycle = dvrp.cycles + 500;
+	dvrp.target_cycle = dvrp.cycles + 100;
 }
 
 std::string dvrp_get_host_path(char* path) {
@@ -218,9 +218,55 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 			{
 				const u16 prop = dvrp.cmd_in_data[0];
 				const u16 val = Host::GetBaseIntSettingValue("DVRP", get_preset_name(prop));
-				Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s) : prop=0x%02x(%-22s), val=0x%x", cmd, get_dvrp_name(cmd).c_str(), prop, get_preset_name(prop), val);
+				//Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s) : prop=0x%02x(%-22s), val=0x%x", cmd, get_dvrp_name(cmd).c_str(), prop, get_preset_name(prop), val);
 				dvrp_set_resp_count_val16(2, val);
 			}
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			break;
+		case dvr_dv_dubb_start:
+			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)", cmd, get_dvrp_name(cmd).c_str());
+			dvrp_set_resp_count(1);
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			break;
+		case dvr_dv_dubb_stop:
+			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)", cmd, get_dvrp_name(cmd).c_str());
+			dvrp_set_resp_count(1);
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			break;
+		case dvr_dv_dubb_rec_start:
+			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)   : args=%d / %d / %d / %d / %d", cmd, get_dvrp_name(cmd).c_str(),
+				dvrp.cmd_in_data[2] << 16 | dvrp.cmd_in_data[3],
+				dvrp.cmd_in_data[0] << 16 | dvrp.cmd_in_data[1],
+				dvrp.cmd_in_data[4],
+				dvrp.cmd_in_data[5],
+				dvrp.cmd_in_data[6]
+			);
+			dvrp_set_resp_count(1);
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			break;
+		case dvr_dv_dubb_rec_stop:
+			dvrp_set_resp_count(1);
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			dvrp_shedule_cmd_comp(cmd);
+			break;
+		case dvr_get_dvcam_info:
+			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)", cmd, get_dvrp_name(cmd).c_str());
+			dvrp_set_resp_count(1);
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			break;
+		case dvr_get_dvcam_name:
+			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)   : args=%x / %x / %x / %x", cmd, get_dvrp_name(cmd).c_str(),
+				dvrp.cmd_in_data[0],
+				dvrp.cmd_in_data[1],
+				dvrp.cmd_in_data[2],
+				dvrp.cmd_in_data[3]
+			);
+			dvrp_set_resp_count(1);
+			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
+			break;
+		case dvr_led_dvd_rec:
+			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)   : val=%d", cmd, get_dvrp_name(cmd).c_str(), dvrp.cmd_in_data[0]);
+			dvrp_set_resp_count(1);
 			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
 			break;
 
@@ -266,7 +312,7 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 					dvrp.ret_val = file->lseek(offset, mode);
 				else
 					dvrp.ret_val = -1;
-				Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_DMA=%x(%s)   : fd=0x%x, offset=0x%x mode=0x%x ret=%d", cmd, get_dvrp_name(cmd).c_str(), dvrp.file_fd, offset, mode, dvrp.ret_val);
+				Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)   : fd=0x%x, offset=0x%x mode=0x%x ret=%d", cmd, get_dvrp_name(cmd).c_str(), dvrp.file_fd, offset, mode, dvrp.ret_val);
 			}
 			dvrp_set_resp_count(1);
 			dvrp_submit_resp(cmd, DVRP_CMD_ACK);
@@ -296,15 +342,31 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 			break;
 
 		// DvrdrvExecCmdAckDmaRecvComp step 3/3
-		case STEP3_CMD | dvrf_dread:
 		case STEP3_CMD | dvrf_read:
+			dvrp.dma_cmd = cmd;
+			//Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)", cmd, get_dvrp_name(cmd).c_str());
+			if (dvrp.read_size & 0xfff)
+			{
+				dvrp.ret_val = 0xffff'ffff;
+				dvrp_set_resp_count_val(3, 0);
+				dvrp_submit_resp(cmd, DVRP_CMD_ACK | DVRP_DMA_ACK);
+				dvrp_shedule_cmd_comp(cmd);
+			}
+			else
+			{
+				dvrp_set_resp_count_val(3, 0x0000'2000);
+				dvrp_submit_resp(cmd, DVRP_CMD_ACK | DVRP_DMA_ACK);
+			}
+			break;
+		case STEP3_CMD | dvrf_dread:
+		case STEP3_CMD | dvr_get_dvcam_name:
 		// DvrdrvExecCmdAckDma2Comp step 3/3
 		case STEP3_CMD | dvrf_getstat:
 		case STEP3_CMD | dvrf_chstat:
 		case STEP3_CMD | dvrf_devctl:
 			dvrp.dma_cmd = cmd;
 			//Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMD=%x(%s)", cmd, get_dvrp_name(cmd).c_str());
-			dvrp_set_resp_count_val(3, 0x0000'4000);
+			dvrp_set_resp_count_val(3, 0x0000'0100); // TODO: set appropriate size for each command
 			dvrp_submit_resp(cmd, DVRP_CMD_ACK | DVRP_DMA_ACK);
 			break;
 
@@ -331,8 +393,7 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 				pMem[0] = ByteSwap(pMem[0]);
 				pMem[1] = ByteSwap(pMem[1]);
 				pMem[2] = ByteSwap(pMem[2]);
-				Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_DMA=%x(%s) : path=%s, ret=%d, mode=0x%x attr=0x%x sz=%d", cmd, get_dvrp_name(cmd).c_str(), path.c_str(),
-					dvrp.ret_val, pMem[0], pMem[1], pMem[2]);
+				//Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_DMA=%x(%s) : path=%s, ret=%d, mode=0x%x attr=0x%x sz=%d", cmd, get_dvrp_name(cmd).c_str(), path.c_str(), dvrp.ret_val, pMem[0], pMem[1], pMem[2]);
 			}
 			dvrp_shedule_cmd_comp(cmd);
 			break;
@@ -376,9 +437,20 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 			dvrp_shedule_cmd_comp(cmd);
 			break;
 
+		case STEP3_READ_DMA | dvr_get_dvcam_name:
+			{
+				char *p = reinterpret_cast<char*>(pMem);
+				u16 len = sprintf(p + 2, "Sony Handycap DCR-1234");
+				p[0] = len >> 8;
+				p[1] = len & 0xff;
+			}
+			dvrp_shedule_cmd_comp(cmd);
+			break;
+
 		// cmd compl
 		case STEP1_COMP + dvr_rec_start:
 		case STEP1_COMP + dvr_rec_stop:
+		case STEP1_COMP + dvr_dv_dubb_rec_stop:
 		case STEP1_COMP + dvr_save_preset_info:
 		case STEP2_COMP + dvr_send_timer_event:
 			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMP=%x(%s)", cmd, get_dvrp_name(cmd).c_str());
@@ -491,7 +563,7 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 			{
 				u32 flags = (dvrp.dma_out[0] << 24) | (dvrp.dma_out[1] << 16) | (dvrp.dma_out[2] << 8) | (dvrp.dma_out[3]);
 				std::string path = reinterpret_cast<char*>(dvrp.dma_out + 4);
-				Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMP=%x(%s)    : dev=%s, flags=%d", cmd, get_dvrp_name(cmd).c_str(), path.c_str(), flags);
+				//Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMP=%x(%s)    : dev=%s, flags=%d", cmd, get_dvrp_name(cmd).c_str(), path.c_str(), flags);
 				dvrp_set_resp_count(3);
 				dvrp_submit_resp(cmd_base, DVRP_CMD_COMPL);
 			}
@@ -544,8 +616,12 @@ void dvrp_handle_func(const u16 cmd, const u8 type, u32* pMem, const int size)
 			
 		case STEP3_COMP + dvrf_read:
 			Console.WriteLn(Color_StrongCyan, "DEV9: DVRP_CMP=%x(%s)    : fd=%x, size=%d, ret=%d", cmd, get_dvrp_name(cmd).c_str(), dvrp.file_fd, dvrp.read_size, dvrp.ret_val);
-			dvrp.ret_val = 0; // TODO: <<-- fix this
-			dvrp_set_resp_count_val(3, dvrp.ret_val);
+			dvrp_set_resp_count_val(3, dvrp.ret_val == 0 ? 0xffff'ffff : dvrp.ret_val);
+			dvrp_submit_resp(cmd_base, DVRP_CMD_COMPL);
+			break;
+
+		case STEP3_COMP | dvr_get_dvcam_name:
+			dvrp_set_resp_count_val(3, 0);
 			dvrp_submit_resp(cmd_base, DVRP_CMD_COMPL);
 			break;
 
